@@ -29,7 +29,7 @@ export default function AdminPage() {
   return (
     <div className="relative min-h-screen flex flex-col bg-[#080c14] text-slate-100 selection:bg-[#00ff88] selection:text-slate-950 overflow-x-hidden">
       
-      {/* BACKGROUND FIXO DA VILA */}
+      {/* BACKGROUND FIXO DA VILA PARA A PÁGINA ADMIN */}
       <div className="fixed inset-0 z-0 pointer-events-none">
         <Image
           src="/images/village_banner_2.png"
@@ -43,12 +43,18 @@ export default function AdminPage() {
         <div className="absolute inset-0 bg-gradient-to-b from-[#080c14]/80 via-transparent to-[#080c14]/90"></div>
       </div>
 
-      {/* CONTEÚDO DA PÁGINA (SESSÃO OU FORMULÁRIO DE LOGIN) */}
-      <div className="relative z-10 flex-1 flex flex-col justify-center py-12">
+      {/* CONTEÚDO PRINCIPAL (DASHBOARD OU LOGIN) */}
+      <div className="relative z-10 flex-1 flex flex-col">
         {session ? (
-          <AdminDashboard session={session} onLogout={() => setSession(null)} />
+          <AdminDashboard
+            session={session}
+            onLogout={() => setSession(null)}
+            onSessionUpdate={(updated) => setSession({ ...updated })}
+          />
         ) : (
-          <AdminLogin onSuccess={(newSession) => setSession(newSession)} />
+          <div className="flex-1 flex flex-col justify-center py-12">
+            <AdminLogin onSuccess={(newSession) => setSession(newSession)} />
+          </div>
         )}
       </div>
     </div>

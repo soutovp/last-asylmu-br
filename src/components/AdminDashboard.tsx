@@ -1,184 +1,162 @@
 "use client";
 
 import { useState } from "react";
-import { UserSession, logoutAdmin } from "@/lib/auth";
-import { isSupabaseConfigured } from "@/lib/supabase";
+import { UserSession } from "@/lib/auth";
+import AdminSidebar from "./AdminSidebar";
+import AdminUserManagement from "./AdminUserManagement";
+import { canUserAccessPage, getAccessiblePagesForUser } from "@/lib/permissions";
 
 interface AdminDashboardProps {
   session: UserSession;
   onLogout: () => void;
+  onSessionUpdate: (updated: UserSession) => void;
 }
 
-export default function AdminDashboard({ session, onLogout }: AdminDashboardProps) {
-  const [activeTab, setActiveTab] = useState<"noticias" | "eventos" | "herois" | "config">("noticias");
+export default function AdminDashboard({
+  session,
+  onLogout,
+  onSessionUpdate,
+}: AdminDashboardProps) {
+  const accessiblePages = getAccessiblePagesForUser(session.role);
+  const defaultPageId = accessiblePages.length > 0 ? accessiblePages[0].id : "herois";
 
-  const handleLogout = async () => {
-    await logoutAdmin();
-    onLogout();
-  };
+  const [activePageId, setActivePageId] = useState<string>(defaultPageId);
+
+  // Garante que se o papel for alterado para um que não tenha acesso à página atual, ajusta para a 1ª liberada
+  const hasAccess = canUserAccessPage(session.role, activePageId);
+  const currentPageId = hasAccess ? activePageId : defaultPageId;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="min-h-screen flex bg-[#080c14] text-slate-100 selection:bg-[#00ff88] selection:text-slate-950">
       
-      {/* CABEÇALHO DO DASHBOARD COM SESSÃO E LOGOUT */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-6 rounded-3xl bg-[#101623]/95 border border-[#00ff88]/30 shadow-2xl backdrop-blur-2xl mb-8">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-[#00ff88]/10 border border-[#00ff88]/30 flex items-center justify-center text-2xl">
-            🛡️
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-xl font-extrabold text-white">Painel Administrativo</h2>
-              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[#00ff88]/20 text-[#00ff88] border border-[#00ff88]/30">
-                SESSÃO ATIVA
-              </span>
-            </div>
-            <p className="text-xs font-mono text-slate-400 mt-0.5">
-              Conectado como: <span className="text-white font-semibold">{session.email}</span>
-            </p>
-          </div>
-        </div>
+      {/* SIDEBAR ADMINISTRATIVA PROFISSIONAL */}
+      <AdminSidebar
+        session={session}
+        activePageId={currentPageId}
+        onSelectPage={(id) => setActiveTabAndPage(id)}
+        onLogout={onLogout}
+        onSessionUpdate={(updated) => {
+          onSessionUpdate(updated);
+          const newPages = getAccessiblePagesForUser(updated.role);
+          if (newPages.length > 0 && !newPages.some((p) => p.id === currentPageId)) {
+            setActivePageId(newPages[0].id);
+          }
+        }}
+      />
 
-        <div className="flex items-center gap-3">
-          <div className="text-right hidden sm:block">
-            <span className="block text-[11px] font-mono text-slate-400">Status do Banco</span>
-            <span className={`text-xs font-mono font-bold ${isSupabaseConfigured ? "text-[#00ff88]" : "text-amber-400"}`}>
-              {isSupabaseConfigured ? "● Supabase Conectado" : "● Modo Fallback"}
-            </span>
-          </div>
-
-          <button
-            onClick={handleLogout}
-            className="px-4 py-2.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 font-bold text-xs transition-colors flex items-center gap-2"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-            </svg>
-            <span>Sair da Conta</span>
-          </button>
-        </div>
-      </div>
-
-      {/* CARDS DE RESUMO DE ESTATÍSTICAS */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
-        <div className="p-5 rounded-2xl bg-[#101623]/80 border border-slate-800">
-          <span className="text-xs font-mono text-slate-400 uppercase">Notícias Publicadas</span>
-          <div className="flex items-baseline justify-between mt-2">
-            <span className="text-3xl font-extrabold text-white">4</span>
-            <span className="text-xs font-mono text-[#00ff88]">Ativo</span>
-          </div>
-        </div>
-
-        <div className="p-5 rounded-2xl bg-[#101623]/80 border border-slate-800">
-          <span className="text-xs font-mono text-slate-400 uppercase">Eventos Programados</span>
-          <div className="flex items-baseline justify-between mt-2">
-            <span className="text-3xl font-extrabold text-white">2</span>
-            <span className="text-xs font-mono text-amber-400">Em Breve</span>
-          </div>
-        </div>
-
-        <div className="p-5 rounded-2xl bg-[#101623]/80 border border-slate-800">
-          <span className="text-xs font-mono text-slate-400 uppercase">Heróis no Banco</span>
-          <div className="flex items-baseline justify-between mt-2">
-            <span className="text-3xl font-extrabold text-white">18</span>
-            <span className="text-xs font-mono text-cyan-400">Atualizado</span>
-          </div>
-        </div>
-
-        <div className="p-5 rounded-2xl bg-[#101623]/80 border border-slate-800">
-          <span className="text-xs font-mono text-slate-400 uppercase">Provedor Auth</span>
-          <div className="flex items-baseline justify-between mt-2">
-            <span className="text-lg font-bold text-white">{isSupabaseConfigured ? "Supabase Auth" : "Local Security"}</span>
-          </div>
-        </div>
-      </div>
-
-      {/* ABAS DE NAVEGAÇÃO INTERNA DO ADMIN */}
-      <div className="flex items-center gap-2 border-b border-slate-800 pb-4 mb-8 overflow-x-auto">
-        {[
-          { id: "noticias", label: "📰 Gerenciar Notícias" },
-          { id: "eventos", label: "📅 Gerenciar Eventos" },
-          { id: "herois", label: "🛡️ Gerenciar Heróis" },
-          { id: "config", label: "⚙️ Configuração Supabase" },
-        ].map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id as typeof activeTab)}
-            className={`px-5 py-2.5 text-xs font-bold rounded-xl transition-all whitespace-nowrap ${
-              activeTab === tab.id
-                ? "bg-[#00ff88] text-slate-950 shadow-[0_0_15px_rgba(0,255,136,0.3)]"
-                : "bg-slate-900/80 text-slate-400 hover:text-white border border-slate-800"
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
-
-      {/* CONTEÚDO DAS ABAS */}
-      <div className="p-8 rounded-3xl bg-[#101623]/90 border border-slate-800 backdrop-blur-xl">
-        {activeTab === "noticias" && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-bold text-white">Notícias & Atualizações</h3>
-              <button className="px-4 py-2 rounded-xl bg-[#00ff88] text-slate-950 font-bold text-xs">
-                + Nova Notícia
-              </button>
-            </div>
-            <p className="text-sm text-slate-400">
-              Aqui você poderá adicionar, editar ou remover posts da Central de Notícias da página inicial.
-            </p>
-          </div>
-        )}
-
-        {activeTab === "eventos" && (
-          <div className="space-y-4">
-            <h3 className="text-lg font-bold text-white">Gerenciamento de Eventos</h3>
-            <p className="text-sm text-slate-400">
-              Configure contagens regressivas, regras de invasão e recompensas para a página de eventos.
-            </p>
-          </div>
-        )}
-
-        {activeTab === "herois" && (
-          <div className="space-y-4">
-            <h3 className="text-lg font-bold text-white">Banco de Dados de Heróis</h3>
-            <p className="text-sm text-slate-400">
-              Cadastre novos heróis, edite atributos de combate e vincule fotos dos personagens.
-            </p>
-          </div>
-        )}
-
-        {activeTab === "config" && (
-          <div className="space-y-6">
-            <h3 className="text-lg font-bold text-white">Status da Conexão com o Supabase</h3>
-            
-            <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 space-y-2">
-              <span className="text-xs font-mono text-slate-400">Variáveis de Ambiente Atuais:</span>
-              <div className="text-xs font-mono text-slate-300">
-                NEXT_PUBLIC_SUPABASE_URL: <span className="text-[#00ff88]">{process.env.NEXT_PUBLIC_SUPABASE_URL || "Não configurado"}</span>
+      {/* ÁREA DE CONTEÚDO PRINCIPAL DO DASHBOARD */}
+      <div className="flex-1 lg:pl-72 flex flex-col min-h-screen">
+        <main className="flex-1 p-6 sm:p-10 max-w-7xl w-full mx-auto">
+          
+          {/* RENDERIZAÇÃO CONFORME A PÁGINA SELECIONADA */}
+          {currentPageId === "herois" && (
+            <div className="space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 rounded-3xl bg-[#101623]/90 border border-slate-800">
+                <div>
+                  <h2 className="text-2xl font-extrabold text-white">Catálogo & Atributos de Heróis</h2>
+                  <p className="text-xs text-slate-400 mt-1">
+                    Cadastre novos heróis, edite atributos de combate e vincule fotos dos personagens.
+                  </p>
+                </div>
+                <button className="px-5 py-2.5 rounded-xl bg-[#00ff88] text-slate-950 font-bold text-xs shadow-[0_0_15px_rgba(0,255,136,0.3)] hover:bg-[#15ff96]">
+                  + Novo Herói
+                </button>
               </div>
-              <div className="text-xs font-mono text-slate-300">
-                NEXT_PUBLIC_SUPABASE_ANON_KEY: <span className="text-[#00ff88]">{process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? "••••••••••••••••" : "Não configurado"}</span>
+
+              <div className="p-8 rounded-3xl bg-[#101623]/80 border border-slate-800 backdrop-blur-xl text-center space-y-3">
+                <span className="text-4xl block">🛡️</span>
+                <h3 className="text-lg font-bold text-white">Módulo de Gestão de Heróis</h3>
+                <p className="text-xs text-slate-400 max-w-md mx-auto">
+                  Utilize o formulário de cadastro para publicar novos heróis com imagem e estatísticas.
+                </p>
               </div>
             </div>
+          )}
 
-            <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs leading-relaxed">
-              <strong>Como conectar ao seu projeto Supabase:</strong>
-              <ol className="list-decimal list-inside mt-2 space-y-1">
-                <li>Crie um arquivo chamado <code className="bg-slate-950 px-1.5 py-0.5 rounded text-white font-mono">.env.local</code> na raiz do projeto.</li>
-                <li>Adicione suas chaves do Supabase obtidas em <em>Project Settings ➔ API</em>:
-                  <pre className="mt-2 p-3 bg-slate-950 rounded text-slate-200 font-mono text-[11px] overflow-x-auto">
-{`NEXT_PUBLIC_SUPABASE_URL=https://seu-projeto.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=sua-chave-anon-aqui`}
-                  </pre>
-                </li>
-                <li>Crie usuários administradores diretamente em <em>Supabase ➔ Authentication ➔ Users</em>.</li>
-              </ol>
+          {currentPageId === "noticias" && (
+            <div className="space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 rounded-3xl bg-[#101623]/90 border border-slate-800">
+                <div>
+                  <h2 className="text-2xl font-extrabold text-white">Central de Notícias & Matérias</h2>
+                  <p className="text-xs text-slate-400 mt-1">
+                    Gerencie os artigos, comunicados da praga e notas de patch da página inicial.
+                  </p>
+                </div>
+                <button className="px-5 py-2.5 rounded-xl bg-[#00ff88] text-slate-950 font-bold text-xs shadow-[0_0_15px_rgba(0,255,136,0.3)] hover:bg-[#15ff96]">
+                  + Nova Matéria
+                </button>
+              </div>
+
+              <div className="p-8 rounded-3xl bg-[#101623]/80 border border-slate-800 backdrop-blur-xl text-center space-y-3">
+                <span className="text-4xl block">📰</span>
+                <h3 className="text-lg font-bold text-white">Módulo de Redação de Notícias</h3>
+                <p className="text-xs text-slate-400 max-w-md mx-auto">
+                  Crie comunicados com categorias (Eventos, Atualizações, Guias) e destaques.
+                </p>
+              </div>
             </div>
-          </div>
-        )}
+          )}
+
+          {currentPageId === "eventos" && (
+            <div className="space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 rounded-3xl bg-[#101623]/90 border border-slate-800">
+                <div>
+                  <h2 className="text-2xl font-extrabold text-white">Histórico & Calendário de Eventos</h2>
+                  <p className="text-xs text-slate-400 mt-1">
+                    Configure os eventos da semana, pontuações de aliança e cronômetros regressivos.
+                  </p>
+                </div>
+                <button className="px-5 py-2.5 rounded-xl bg-amber-400 text-slate-950 font-bold text-xs shadow-[0_0_15px_rgba(245,158,11,0.3)]">
+                  + Programar Evento
+                </button>
+              </div>
+
+              <div className="p-8 rounded-3xl bg-[#101623]/80 border border-slate-800 backdrop-blur-xl text-center space-y-3">
+                <span className="text-4xl block">📅</span>
+                <h3 className="text-lg font-bold text-white">Módulo de Histórico de Eventos</h3>
+                <p className="text-xs text-slate-400 max-w-md mx-auto">
+                  Agende as fases semanais de invasão para exibição na página de eventos.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {currentPageId === "tutoriais" && (
+            <div className="space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 rounded-3xl bg-[#101623]/90 border border-slate-800">
+                <div>
+                  <h2 className="text-2xl font-extrabold text-white">Tutoriais & Guias Estratégicos</h2>
+                  <p className="text-xs text-slate-400 mt-1">
+                    Crie guias passo a passo para iniciantes e estratégias avançadas de base.
+                  </p>
+                </div>
+                <button className="px-5 py-2.5 rounded-xl bg-cyan-400 text-slate-950 font-bold text-xs shadow-[0_0_15px_rgba(6,182,212,0.3)]">
+                  + Criar Tutorial
+                </button>
+              </div>
+
+              <div className="p-8 rounded-3xl bg-[#101623]/80 border border-slate-800 backdrop-blur-xl text-center space-y-3">
+                <span className="text-4xl block">📚</span>
+                <h3 className="text-lg font-bold text-white">Módulo de Base de Tutoriais</h3>
+                <p className="text-xs text-slate-400 max-w-md mx-auto">
+                  Escreva guias ilustrados com imagens e estratégias de evolução de tropas.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {currentPageId === "usuarios" && (
+            <AdminUserManagement />
+          )}
+
+        </main>
       </div>
     </div>
   );
+
+  function setActiveTabAndPage(id: string) {
+    if (canUserAccessPage(session.role, id)) {
+      setActivePageId(id);
+    }
+  }
 }
