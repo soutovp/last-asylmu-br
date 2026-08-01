@@ -9,25 +9,70 @@ import {
 } from "@/lib/calculators";
 
 // COMPONENTE DE ILUSTRAÇÃO VISUAL DAS 5 ESTRELAS (DIVISÃO POR PERNAS DE 0.2 A 1.0)
-function StarDisplay({ val }: { val: number }) {
+function StarDisplay({ val, onLegClick }: { val: number; onLegClick?: (value: number) => void }) {
   const isRed = val > 5.0;
   const effectiveVal = isRed ? Number((val - 5.0).toFixed(1)) : val;
 
   const fullStars = Math.floor(effectiveVal);
   const fraction = Number((effectiveVal - fullStars).toFixed(1));
 
-  // AS 5 PERNAS DA ESTRELA NA ORDEM EXATA SOLICITADA:
-  // 0.2: Perna superior esquerda
-  // 0.4: Perna inferior esquerda
-  // 0.6: Perna inferior direita
-  // 0.8: Perna superior direita
-  // 1.0: Perna central superior
+  // ORDEM DAS FRAÇÕES DE ACORDO COM A SOLICITAÇÃO:
+  // 0.2: Centro Superior
+  // 0.4: Esquerda Superior
+  // 0.6: Esquerda Inferior
+  // 0.8: Direita Inferior
+  // 1.0: Direita Superior
   const legs = [
-    { req: 0.2, d: "M 12,12.5 L 8.01,13.80 L 2.49,9.41 L 9.53,9.10 Z", name: "Superior Esquerda" },
-    { req: 0.4, d: "M 12,12.5 L 12,16.70 L 6.12,20.59 L 8.01,13.80 Z", name: "Inferior Esquerda" },
-    { req: 0.6, d: "M 12,12.5 L 15.99,13.80 L 17.88,20.59 L 12,16.70 Z", name: "Inferior Direita" },
-    { req: 0.8, d: "M 12,12.5 L 14.47,9.10 L 21.51,9.41 L 15.99,13.80 Z", name: "Superior Direita" },
-    { req: 1.0, d: "M 12,12.5 L 9.53,9.10 L 12,2.5 L 14.47,9.10 Z", name: "Central Superior" },
+    {
+      req: 0.2,
+      dLight: "M 12,12.5 L 8.94,8.29 L 12,2.5 Z",
+      dDark: "M 12,12.5 L 12,2.5 L 15.06,8.29 Z",
+      name: "Centro Superior",
+      yLight: "#FEF6B3",
+      yDark: "#FDC029",
+      rLight: "#FCA5A5",
+      rDark: "#EF4444"
+    },
+    {
+      req: 0.4,
+      dLight: "M 12,12.5 L 7.05,14.11 L 2.49,9.41 Z",
+      dDark: "M 12,12.5 L 2.49,9.41 L 8.94,8.29 Z",
+      name: "Esquerda Superior",
+      yLight: "#FDC029",
+      yDark: "#FEF6B3",
+      rLight: "#EF4444",
+      rDark: "#FCA5A5"
+    },
+    {
+      req: 0.6,
+      dLight: "M 12,12.5 L 12,17.70 L 6.12,20.59 Z",
+      dDark: "M 12,12.5 L 6.12,20.59 L 7.05,14.11 Z",
+      name: "Esquerda Inferior",
+      yLight: "#C98E08",
+      yDark: "#FDC029",
+      rLight: "#B91C1C",
+      rDark: "#EF4444"
+    },
+    {
+      req: 0.8,
+      dLight: "M 12,12.5 L 16.95,14.11 L 17.88,20.59 Z",
+      dDark: "M 12,12.5 L 17.88,20.59 L 12,17.70 Z",
+      name: "Direita Inferior",
+      yLight: "#D69906",
+      yDark: "#AD701C",
+      rLight: "#DC2626",
+      rDark: "#7F1D1D"
+    },
+    {
+      req: 1.0,
+      dLight: "M 12,12.5 L 15.06,8.29 L 21.51,9.41 Z",
+      dDark: "M 12,12.5 L 21.51,9.41 L 16.95,14.11 Z",
+      name: "Direita Superior",
+      yLight: "#FFF380",
+      yDark: "#FDC029",
+      rLight: "#FECACA",
+      rDark: "#EF4444"
+    },
   ];
 
   return (
@@ -50,26 +95,52 @@ function StarDisplay({ val }: { val: number }) {
                   isActive = fraction >= leg.req;
                 }
 
-                const activeFill = isRed ? "#ef4444" : "#fbbf24";
+                const activeFillLight = isRed ? leg.rLight : leg.yLight;
+                const activeFillDark = isRed ? leg.rDark : leg.yDark;
+                const inactiveFillLight = "#374151";
+                const inactiveFillDark = "#1f2937";
+
                 const activeStroke = isRed ? "#b91c1c" : "#d97706";
-                const inactiveFill = isRed ? "rgba(127, 29, 29, 0.25)" : "rgba(120, 53, 15, 0.25)";
-                const inactiveStroke = isRed ? "rgba(239, 68, 68, 0.35)" : "rgba(245, 158, 11, 0.35)";
+                const inactiveStroke = isRed ? "rgba(239, 68, 68, 0.15)" : "rgba(245, 158, 11, 0.15)";
+
+                const handlePathClick = () => {
+                  if (onLegClick) {
+                    const clickedVal = (isRed ? 5.0 : 0.0) + (starIndex - 1) + leg.req;
+                    onLegClick(Number(clickedVal.toFixed(1)));
+                  }
+                };
 
                 return (
-                  <path
+                  <g
                     key={legIdx}
-                    d={leg.d}
-                    fill={isActive ? activeFill : inactiveFill}
-                    stroke={isActive ? activeStroke : inactiveStroke}
-                    strokeWidth="0.75"
-                    strokeLinejoin="round"
+                    onClick={handlePathClick}
+                    className={onLegClick ? "cursor-pointer hover:opacity-80" : ""}
                     style={{
                       filter: isActive
-                        ? `drop-shadow(0 0 4px ${isRed ? "rgba(239,68,68,0.85)" : "rgba(251,191,36,0.85)"})`
+                        ? `drop-shadow(0 0 1.5px ${isRed ? "rgba(185, 28, 28, 0.85)" : "rgba(217, 119, 6, 0.85)"})`
                         : "none",
                       transition: "all 0.2s ease-in-out",
                     }}
-                  />
+                  >
+                    {/* Metade Esquerda (Brilho / Clara) */}
+                    <path
+                      d={leg.dLight}
+                      fill={isActive ? activeFillLight : inactiveFillLight}
+                      stroke={isActive ? activeStroke : inactiveStroke}
+                      strokeWidth={isFull ? "0" : "0.5"}
+                      strokeLinejoin="round"
+                      strokeLinecap="round"
+                    />
+                    {/* Metade Direita (Sombra / Escura) */}
+                    <path
+                      d={leg.dDark}
+                      fill={isActive ? activeFillDark : inactiveFillDark}
+                      stroke={isActive ? activeStroke : inactiveStroke}
+                      strokeWidth={isFull ? "0" : "0.5"}
+                      strokeLinejoin="round"
+                      strokeLinecap="round"
+                    />
+                  </g>
                 );
               })}
             </svg>
@@ -84,22 +155,200 @@ export default function Calculators() {
   // 1. ESTADO ANTITOXINA
   const [nivelAtual, setNivelAtual] = useState(1);
   const [nivelDesejado, setNivelDesejado] = useState(50);
+  const [nivelAtualInput, setNivelAtualInput] = useState("1");
+  const [nivelDesejadoInput, setNivelDesejadoInput] = useState("50");
 
   // 2. ESTADO ESTRELAS (STEP DE 0.2)
   const [estrelaAtual, setEstrelaAtual] = useState(0.0);
   const [estrelaDesejada, setEstrelaDesejada] = useState(5.0);
+  const [estrelaAtualInput, setEstrelaAtualInput] = useState("0.0");
+  const [estrelaDesejadaInput, setEstrelaDesejadaInput] = useState("5.0");
 
   // 3. ESTADO HABILIDADES (BADGES)
   const [skillAtual, setSkillAtual] = useState(1);
   const [skillDesejada, setSkillDesejada] = useState(10);
+  const [skillAtualInput, setSkillAtualInput] = useState("1");
+  const [skillDesejadaInput, setSkillDesejadaInput] = useState("10");
 
   const resAntitoxina = calcularAntitoxinTotal(nivelAtual, nivelDesejado);
   const resShards = calcularShardsTotal(estrelaAtual, estrelaDesejada);
   const resSkill = calcularSkillBadgesTotal(skillAtual, skillDesejada);
 
-  // FUNÇÕES AUXILIARES DE PASSO 0.2 PARA ESTRELAS
+  // FUNÇÕES DE ATUALIZAÇÃO E SINCRONIZAÇÃO DE INPUTS
+  const updateNivelAtual = (newVal: number) => {
+    setNivelAtual(newVal);
+    setNivelAtualInput(newVal.toString());
+  };
+
+  const updateNivelDesejado = (newVal: number) => {
+    setNivelDesejado(newVal);
+    setNivelDesejadoInput(newVal.toString());
+  };
+
+  const setNivelAtualCombined = (val: number) => {
+    updateNivelAtual(val);
+    if (val >= nivelDesejado) {
+      updateNivelDesejado(Math.min(148, val + 1));
+    }
+  };
+
+  const setNivelDesejadoCombined = (val: number) => {
+    updateNivelDesejado(val);
+    if (val <= nivelAtual) {
+      updateNivelAtual(Math.max(1, val - 1));
+    }
+  };
+
+  const handleNivelAtualInputChange = (val: string) => {
+    const cleaned = val.replace(/\D/g, "");
+    setNivelAtualInput(cleaned);
+    const parsed = parseInt(cleaned, 10);
+    if (!isNaN(parsed)) {
+      setNivelAtual(parsed);
+    }
+  };
+
+  const handleNivelAtualBlur = () => {
+    let val = parseInt(nivelAtualInput, 10);
+    if (isNaN(val)) val = 1;
+    val = Math.max(1, Math.min(147, val));
+    setNivelAtualCombined(val);
+  };
+
+  const handleNivelDesejadoInputChange = (val: string) => {
+    const cleaned = val.replace(/\D/g, "");
+    setNivelDesejadoInput(cleaned);
+    const parsed = parseInt(cleaned, 10);
+    if (!isNaN(parsed)) {
+      setNivelDesejado(parsed);
+    }
+  };
+
+  const handleNivelDesejadoBlur = () => {
+    let val = parseInt(nivelDesejadoInput, 10);
+    if (isNaN(val)) val = 148;
+    val = Math.max(2, Math.min(148, val));
+    setNivelDesejadoCombined(val);
+  };
+
+  const updateEstrelaAtual = (newVal: number) => {
+    setEstrelaAtual(newVal);
+    setEstrelaAtualInput(newVal.toFixed(1));
+  };
+
+  const updateEstrelaDesejada = (newVal: number) => {
+    setEstrelaDesejada(newVal);
+    setEstrelaDesejadaInput(newVal.toFixed(1));
+  };
+
+  const setEstrelaAtualCombined = (val: number) => {
+    const rounded = Number(val.toFixed(1));
+    updateEstrelaAtual(rounded);
+    if (rounded >= estrelaDesejada) {
+      updateEstrelaDesejada(Math.min(10.0, rounded + 0.2));
+    }
+  };
+
+  const setEstrelaDesejadaCombined = (val: number) => {
+    const rounded = Number(val.toFixed(1));
+    updateEstrelaDesejada(rounded);
+    if (rounded <= estrelaAtual) {
+      updateEstrelaAtual(Math.max(0.0, rounded - 0.2));
+    }
+  };
+
+  const handleEstrelaAtualInputChange = (val: string) => {
+    const cleaned = val.replace(/[^\d.]/g, "");
+    setEstrelaAtualInput(cleaned);
+    const parsed = parseFloat(cleaned);
+    if (!isNaN(parsed)) {
+      setEstrelaAtual(parsed);
+    }
+  };
+
+  const handleEstrelaAtualBlur = () => {
+    let val = parseFloat(estrelaAtualInput);
+    if (isNaN(val)) val = 0.0;
+    val = Math.max(0.0, Math.min(9.8, val));
+    const rounded = Number((Math.round(val * 5) / 5).toFixed(1));
+    setEstrelaAtualCombined(rounded);
+  };
+
+  const handleEstrelaDesejadaInputChange = (val: string) => {
+    const cleaned = val.replace(/[^\d.]/g, "");
+    setEstrelaDesejadaInput(cleaned);
+    const parsed = parseFloat(cleaned);
+    if (!isNaN(parsed)) {
+      setEstrelaDesejada(parsed);
+    }
+  };
+
+  const handleEstrelaDesejadaBlur = () => {
+    let val = parseFloat(estrelaDesejadaInput);
+    if (isNaN(val)) val = 10.0;
+    val = Math.max(0.2, Math.min(10.0, val));
+    const rounded = Number((Math.round(val * 5) / 5).toFixed(1));
+    setEstrelaDesejadaCombined(rounded);
+  };
+
   const incEstrela = (val: number, max: number) => Number(Math.min(max, val + 0.2).toFixed(1));
   const decEstrela = (val: number, min: number) => Number(Math.max(min, val - 0.2).toFixed(1));
+
+  const updateSkillAtual = (newVal: number) => {
+    setSkillAtual(newVal);
+    setSkillAtualInput(newVal.toString());
+  };
+
+  const updateSkillDesejada = (newVal: number) => {
+    setSkillDesejada(newVal);
+    setSkillDesejadaInput(newVal.toString());
+  };
+
+  const setSkillAtualCombined = (val: number) => {
+    updateSkillAtual(val);
+    if (val >= skillDesejada) {
+      updateSkillDesejada(Math.min(22, val + 1));
+    }
+  };
+
+  const setSkillDesejadaCombined = (val: number) => {
+    updateSkillDesejada(val);
+    if (val <= skillAtual) {
+      updateSkillAtual(Math.max(1, val - 1));
+    }
+  };
+
+  const handleSkillAtualInputChange = (val: string) => {
+    const cleaned = val.replace(/\D/g, "");
+    setSkillAtualInput(cleaned);
+    const parsed = parseInt(cleaned, 10);
+    if (!isNaN(parsed)) {
+      setSkillAtual(parsed);
+    }
+  };
+
+  const handleSkillAtualBlur = () => {
+    let val = parseInt(skillAtualInput, 10);
+    if (isNaN(val)) val = 1;
+    val = Math.max(1, Math.min(21, val));
+    setSkillAtualCombined(val);
+  };
+
+  const handleSkillDesejadaInputChange = (val: string) => {
+    const cleaned = val.replace(/\D/g, "");
+    setSkillDesejadaInput(cleaned);
+    const parsed = parseInt(cleaned, 10);
+    if (!isNaN(parsed)) {
+      setSkillDesejada(parsed);
+    }
+  };
+
+  const handleSkillDesejadaBlur = () => {
+    let val = parseInt(skillDesejadaInput, 10);
+    if (isNaN(val)) val = 22;
+    val = Math.max(2, Math.min(22, val));
+    setSkillDesejadaCombined(val);
+  };
 
   return (
     <section className="relative py-12 sm:py-20 bg-transparent">
@@ -176,23 +425,23 @@ export default function Calculators() {
 
                   <div className="flex items-center gap-2">
                     <button
-                      onClick={() => setNivelAtual(Math.max(1, nivelAtual - 1))}
+                      onClick={() => updateNivelAtual(Math.max(1, nivelAtual - 1))}
                       className="w-10 h-10 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-[#00ff88] text-xl font-bold flex items-center justify-center border border-slate-700 select-none"
                     >
                       -
                     </button>
 
                     <input
-                      type="number"
-                      min={1}
-                      max={147}
-                      value={nivelAtual}
-                      onChange={(e) => setNivelAtual(Number(e.target.value))}
+                      type="text"
+                      inputMode="numeric"
+                      value={nivelAtualInput}
+                      onChange={(e) => handleNivelAtualInputChange(e.target.value)}
+                      onBlur={handleNivelAtualBlur}
                       className="w-full h-10 text-center text-xl font-extrabold text-white bg-slate-950 rounded-xl border border-slate-700 focus:outline-none focus:border-[#00ff88]"
                     />
 
                     <button
-                      onClick={() => setNivelAtual(Math.min(nivelDesejado - 1, nivelAtual + 1))}
+                      onClick={() => setNivelAtualCombined(Math.min(147, nivelAtual + 1))}
                       className="w-10 h-10 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-[#00ff88] text-xl font-bold flex items-center justify-center border border-slate-700 select-none"
                     >
                       +
@@ -211,23 +460,23 @@ export default function Calculators() {
 
                   <div className="flex items-center gap-2">
                     <button
-                      onClick={() => setNivelDesejado(Math.max(nivelAtual + 1, nivelDesejado - 1))}
+                      onClick={() => setNivelDesejadoCombined(Math.max(2, nivelDesejado - 1))}
                       className="w-10 h-10 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-[#00ff88] text-xl font-bold flex items-center justify-center border border-slate-700 select-none"
                     >
                       -
                     </button>
 
                     <input
-                      type="number"
-                      min={2}
-                      max={148}
-                      value={nivelDesejado}
-                      onChange={(e) => setNivelDesejado(Number(e.target.value))}
+                      type="text"
+                      inputMode="numeric"
+                      value={nivelDesejadoInput}
+                      onChange={(e) => handleNivelDesejadoInputChange(e.target.value)}
+                      onBlur={handleNivelDesejadoBlur}
                       className="w-full h-10 text-center text-xl font-extrabold text-white bg-slate-950 rounded-xl border border-slate-700 focus:outline-none focus:border-[#00ff88]"
                     />
 
                     <button
-                      onClick={() => setNivelDesejado(Math.min(148, nivelDesejado + 1))}
+                      onClick={() => updateNivelDesejado(Math.min(148, nivelDesejado + 1))}
                       className="w-10 h-10 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-[#00ff88] text-xl font-bold flex items-center justify-center border border-slate-700 select-none"
                     >
                       +
@@ -315,28 +564,26 @@ export default function Calculators() {
                   </div>
 
                   {/* ILUSTRAÇÃO DAS ESTRELAS ATUAIS */}
-                  <StarDisplay val={estrelaAtual} />
+                  <StarDisplay val={estrelaAtual} onLegClick={setEstrelaAtualCombined} />
 
                   <div className="flex items-center gap-2 mt-2">
                     <button
-                      onClick={() => setEstrelaAtual(decEstrela(estrelaAtual, 0.0))}
+                      onClick={() => updateEstrelaAtual(decEstrela(estrelaAtual, 0.0))}
                       className="w-10 h-10 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-amber-400 text-xl font-bold flex items-center justify-center border border-slate-700 select-none"
                     >
                       -
                     </button>
 
                     <input
-                      type="number"
-                      step={0.2}
-                      min={0.0}
-                      max={9.8}
-                      value={estrelaAtual.toFixed(1)}
-                      onChange={(e) => setEstrelaAtual(Number(e.target.value))}
+                      type="text"
+                      value={estrelaAtualInput}
+                      onChange={(e) => handleEstrelaAtualInputChange(e.target.value)}
+                      onBlur={handleEstrelaAtualBlur}
                       className="w-full h-10 text-center text-xl font-extrabold text-white bg-slate-950 rounded-xl border border-slate-700 focus:outline-none focus:border-amber-400"
                     />
 
                     <button
-                      onClick={() => setEstrelaAtual(incEstrela(estrelaAtual, estrelaDesejada - 0.2))}
+                      onClick={() => setEstrelaAtualCombined(incEstrela(estrelaAtual, 9.8))}
                       className="w-10 h-10 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-amber-400 text-xl font-bold flex items-center justify-center border border-slate-700 select-none"
                     >
                       +
@@ -356,28 +603,26 @@ export default function Calculators() {
                   </div>
 
                   {/* ILUSTRAÇÃO DAS ESTRELAS DESEJADAS */}
-                  <StarDisplay val={estrelaDesejada} />
+                  <StarDisplay val={estrelaDesejada} onLegClick={setEstrelaDesejadaCombined} />
 
                   <div className="flex items-center gap-2 mt-2">
                     <button
-                      onClick={() => setEstrelaDesejada(decEstrela(estrelaDesejada, estrelaAtual + 0.2))}
+                      onClick={() => setEstrelaDesejadaCombined(decEstrela(estrelaDesejada, 0.2))}
                       className="w-10 h-10 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-amber-400 text-xl font-bold flex items-center justify-center border border-slate-700 select-none"
                     >
                       -
                     </button>
 
                     <input
-                      type="number"
-                      step={0.2}
-                      min={0.2}
-                      max={10.0}
-                      value={estrelaDesejada.toFixed(1)}
-                      onChange={(e) => setEstrelaDesejada(Number(e.target.value))}
+                      type="text"
+                      value={estrelaDesejadaInput}
+                      onChange={(e) => handleEstrelaDesejadaInputChange(e.target.value)}
+                      onBlur={handleEstrelaDesejadaBlur}
                       className="w-full h-10 text-center text-xl font-extrabold text-white bg-slate-950 rounded-xl border border-slate-700 focus:outline-none focus:border-amber-400"
                     />
 
                     <button
-                      onClick={() => setEstrelaDesejada(incEstrela(estrelaDesejada, 10.0))}
+                      onClick={() => updateEstrelaDesejada(incEstrela(estrelaDesejada, 10.0))}
                       className="w-10 h-10 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-amber-400 text-xl font-bold flex items-center justify-center border border-slate-700 select-none"
                     >
                       +
@@ -463,23 +708,23 @@ export default function Calculators() {
 
                   <div className="flex items-center gap-2">
                     <button
-                      onClick={() => setSkillAtual(Math.max(1, skillAtual - 1))}
+                      onClick={() => updateSkillAtual(Math.max(1, skillAtual - 1))}
                       className="w-10 h-10 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-cyan-400 text-xl font-bold flex items-center justify-center border border-slate-700 select-none"
                     >
                       -
                     </button>
 
                     <input
-                      type="number"
-                      min={1}
-                      max={21}
-                      value={skillAtual}
-                      onChange={(e) => setSkillAtual(Number(e.target.value))}
+                      type="text"
+                      inputMode="numeric"
+                      value={skillAtualInput}
+                      onChange={(e) => handleSkillAtualInputChange(e.target.value)}
+                      onBlur={handleSkillAtualBlur}
                       className="w-full h-10 text-center text-xl font-extrabold text-white bg-slate-950 rounded-xl border border-slate-700 focus:outline-none focus:border-cyan-400"
                     />
 
                     <button
-                      onClick={() => setSkillAtual(Math.min(skillDesejada - 1, skillAtual + 1))}
+                      onClick={() => setSkillAtualCombined(Math.min(21, skillAtual + 1))}
                       className="w-10 h-10 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-cyan-400 text-xl font-bold flex items-center justify-center border border-slate-700 select-none"
                     >
                       +
@@ -498,23 +743,23 @@ export default function Calculators() {
 
                   <div className="flex items-center gap-2">
                     <button
-                      onClick={() => setSkillDesejada(Math.max(skillAtual + 1, skillDesejada - 1))}
+                      onClick={() => setSkillDesejadaCombined(Math.max(2, skillDesejada - 1))}
                       className="w-10 h-10 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-cyan-400 text-xl font-bold flex items-center justify-center border border-slate-700 select-none"
                     >
                       -
                     </button>
 
                     <input
-                      type="number"
-                      min={2}
-                      max={22}
-                      value={skillDesejada}
-                      onChange={(e) => setSkillDesejada(Number(e.target.value))}
+                      type="text"
+                      inputMode="numeric"
+                      value={skillDesejadaInput}
+                      onChange={(e) => handleSkillDesejadaInputChange(e.target.value)}
+                      onBlur={handleSkillDesejadaBlur}
                       className="w-full h-10 text-center text-xl font-extrabold text-white bg-slate-950 rounded-xl border border-slate-700 focus:outline-none focus:border-cyan-400"
                     />
 
                     <button
-                      onClick={() => setSkillDesejada(Math.min(22, skillDesejada + 1))}
+                      onClick={() => updateSkillDesejada(Math.min(22, skillDesejada + 1))}
                       className="w-10 h-10 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-cyan-400 text-xl font-bold flex items-center justify-center border border-slate-700 select-none"
                     >
                       +
