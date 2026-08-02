@@ -85,12 +85,9 @@ export default function AdminLogin({ onSuccess }: AdminLoginProps) {
           </span>
         </div>
 
-        <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight flex items-center justify-center gap-2">
-          <span>LAST ASYLUM</span>
-          <sup className="text-sm font-mono font-bold text-[#00ff88] align-super border border-[#00ff88]/40 px-2 py-0.5 rounded bg-[#101623]">
-            BR
-          </sup>
-        </h2>
+        <div className="flex justify-center mb-4">
+          <img src="/images/last-asylum-br-logo.png" alt="Logo" className="h-14 w-auto object-contain" />
+        </div>
         <p className="mt-2 text-xs text-slate-400">
           {view === "login"
             ? "Autenticação administrativa segura para gestão do portal."

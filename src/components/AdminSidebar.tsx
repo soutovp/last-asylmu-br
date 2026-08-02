@@ -38,11 +38,8 @@ export default function AdminSidebar({
     <>
       {/* BOTÃO MOBILE HAMBÚRGUER (EXIBIDO APENAS EM DISPOSITIVOS MÓVEIS) */}
       <div className="lg:hidden sticky top-0 z-40 bg-[#101623]/95 border-b border-slate-800 p-4 flex items-center justify-between backdrop-blur-xl">
-        <div className="flex items-center gap-2">
-          <span className="font-extrabold text-lg text-white">LAST ASYLUM</span>
-          <sup className="text-xs font-mono font-bold text-[#00ff88] align-super border border-[#00ff88]/40 px-1.5 py-0.5 rounded bg-[#101623]">
-            BR
-          </sup>
+        <div className="flex items-center">
+          <img src="/images/last-asylum-br-logo.png" alt="Logo" className="h-7 w-auto object-contain" />
         </div>
         <button
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -64,13 +61,8 @@ export default function AdminSidebar({
             <div className={`p-4 border-b border-slate-800/80 flex items-center ${collapsed ? "justify-center" : "justify-between"}`}>
               {!collapsed ? (
                 <>
-                  <Link href="/" className="flex items-center gap-1 group">
-                    <span className="font-black text-sm tracking-wider text-white group-hover:text-[#00ff88] transition-colors">
-                      LAST ASYLUM
-                    </span>
-                    <sup className="text-[9px] font-mono font-bold text-[#00ff88] align-super border border-[#00ff88]/40 px-1 py-0.2 rounded bg-[#101623]">
-                      BR
-                    </sup>
+                  <Link href="/" className="flex items-center group">
+                    <img src="/images/last-asylum-br-logo.png" alt="Logo" className="h-[70px] w-auto object-contain" />
                   </Link>
                   <button
                     onClick={onToggleCollapse}
@@ -89,7 +81,7 @@ export default function AdminSidebar({
                   >
                     ▶
                   </button>
-                  <span className="font-mono text-xs text-[#00ff88] font-bold">LA</span>
+                  <img src="/images/icon-last-asylum-br.png" alt="Icon" className="w-5 h-5 object-contain" />
                 </div>
               )}
             </div>

@@ -66,14 +66,13 @@ export default function Header() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
           
-          {/* LOGO 'LAST ASYLUM BR' (BR ELEVADO) */}
-          <Link href="/" className="flex items-center gap-2 group">
-            <span className="font-extrabold text-xl sm:text-2xl tracking-wider text-slate-100 group-hover:text-white transition-colors">
-              LAST ASYLUM
-            </span>
-            <sup className="text-xs sm:text-sm font-mono font-bold text-[#00ff88] align-super border border-[#00ff88]/40 px-2 py-0.5 rounded bg-[#101623] shadow-[0_0_10px_rgba(0,255,136,0.2)] toxic-text-glow">
-              BR
-            </sup>
+          {/* LOGO OFICIAL 'LAST ASYLUM BR' */}
+          <Link href="/" className="flex items-center group">
+            <img 
+              src="/images/last-asylum-br-logo.png" 
+              alt="Last Asylum BR Logo" 
+              className="h-10 sm:h-12 w-auto object-contain transition-transform duration-300 group-hover:scale-[1.02]"
+            />
           </Link>
 
           {/* DESKTOP NAVIGATION LINKS COM ÍCONES VETORIZADOS */}

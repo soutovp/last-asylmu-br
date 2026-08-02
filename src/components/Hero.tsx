@@ -29,12 +29,13 @@ export default function Hero() {
 
         {/* TÍTULO NO BANNER COM LOGO 'LAST ASYLUM BR' (BR ELEVADO) */}
         <div className="relative z-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 sm:pt-16 text-center w-full">
-          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white drop-shadow-[0_4px_20px_rgba(0,0,0,0.95)] max-w-4xl mx-auto flex items-center justify-center gap-2 flex-wrap">
-            <span>LAST ASYLUM</span>
-            <sup className="text-lg sm:text-2xl font-mono font-bold text-[#00ff88] align-super border border-[#00ff88]/40 px-2.5 py-0.5 rounded-lg bg-[#101623]/90 shadow-[0_0_15px_rgba(0,255,136,0.3)] toxic-text-glow">
-              BR
-            </sup>
-          </h1>
+          <div className="flex justify-center mb-4">
+            <img 
+              src="/images/last-asylum-br-logo.png" 
+              alt="Last Asylum BR Logo" 
+              className="h-[150px] md:h-[250px] w-auto object-contain drop-shadow-[0_4px_25px_rgba(0,255,136,0.25)] animate-in zoom-in duration-300"
+            />
+          </div>
 
           <p className="mt-3 text-base sm:text-lg text-slate-300 font-medium max-w-2xl mx-auto drop-shadow-[0_2px_10px_rgba(0,0,0,0.9)]">
             O hub definitivo de calculadoras, eventos e guias estratégicos para a comunidade brasileira.
