@@ -61,6 +61,10 @@ export default function AdminArticleEditor({
   const [saveLoading, setSaveLoading] = useState(false);
   const [errMsg, setErrMsg] = useState("");
 
+  // Cloudinary credentials from env
+  const cloudinaryCloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || "";
+  const cloudinaryUploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || "";
+
   // Campos do formulário
   const [title, setTitle] = useState("");
   const [summary, setSummary] = useState("");
@@ -117,6 +121,41 @@ export default function AdminArticleEditor({
   });
 
   const [savedRange, setSavedRange] = useState<Range | null>(null);
+  const [uploadProgress, setUploadProgress] = useState(false);
+
+  // Carrega uploads salvos no Banco ou LocalStorage ao montar/atualizar
+  const loadMediaAssets = async () => {
+    try {
+      if (isSupabaseConfigured) {
+        const { supabase } = await import("@/lib/supabase");
+        const { data, error } = await supabase
+          .from("media_assets")
+          .select("url")
+          .order("created_at", { ascending: false });
+
+        if (data) {
+          setImageLibrary((prev) => ({
+            ...prev,
+            Uploads: data.map((item: any) => item.url)
+          }));
+        }
+      } else {
+        const saved = localStorage.getItem("local_uploads");
+        if (saved) {
+          setImageLibrary((prev) => ({
+            ...prev,
+            Uploads: JSON.parse(saved)
+          }));
+        }
+      }
+    } catch (err) {
+      console.error("Erro ao carregar galeria:", err);
+    }
+  };
+
+  useEffect(() => {
+    loadMediaAssets();
+  }, []);
 
   // Carrega dados para edição
   useEffect(() => {
@@ -334,46 +373,76 @@ export default function AdminArticleEditor({
     setShowImageModal(true);
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Upload para o Cloudinary via API
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = (event) => {
-      const img = new Image();
-      img.src = event.target?.result as string;
-      img.onload = () => {
-        const canvas = document.createElement("canvas");
-        const maxDim = 800;
-        let width = img.width;
-        let height = img.height;
+    if (!cloudinaryCloudName || !cloudinaryUploadPreset) {
+      alert("Por favor, configure NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME e NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET no arquivo .env.local!");
+      return;
+    }
 
-        if (width > height) {
-          if (width > maxDim) {
-            height = Math.round((height * maxDim) / width);
-            width = maxDim;
-          }
-        } else {
-          if (height > maxDim) {
-            width = Math.round((width * maxDim) / height);
-            height = maxDim;
-          }
+    setUploadProgress(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("upload_preset", cloudinaryUploadPreset);
+
+      const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudinaryCloudName}/image/upload`, {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!res.ok) {
+        throw new Error("Erro na requisição para o servidor Cloudinary");
+      }
+
+      const data = await res.json();
+      const uploadedUrl = data.secure_url;
+
+      if (isSupabaseConfigured) {
+        const { supabase } = await import("@/lib/supabase");
+        await supabase
+          .from("media_assets")
+          .insert([{ url: uploadedUrl }]);
+      } else {
+        const saved = localStorage.getItem("local_uploads");
+        const list = saved ? JSON.parse(saved) : [];
+        list.push(uploadedUrl);
+        localStorage.setItem("local_uploads", JSON.stringify(list));
+      }
+
+      await loadMediaAssets();
+    } catch (err: any) {
+      alert("Erro ao enviar imagem: " + err.message);
+    } finally {
+      setUploadProgress(false);
+    }
+  };
+
+  // Remove imagem da galeria
+  const deleteUploadImage = async (urlToDelete: string) => {
+    if (!confirm("Tem certeza que deseja excluir esta imagem da biblioteca?")) return;
+    try {
+      if (isSupabaseConfigured) {
+        const { supabase } = await import("@/lib/supabase");
+        await supabase
+          .from("media_assets")
+          .delete()
+          .eq("url", urlToDelete);
+      } else {
+        const saved = localStorage.getItem("local_uploads");
+        if (saved) {
+          const list = JSON.parse(saved) as string[];
+          const filtered = list.filter((url) => url !== urlToDelete);
+          localStorage.setItem("local_uploads", JSON.stringify(filtered));
         }
-
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext("2d");
-        ctx?.drawImage(img, 0, 0, width, height);
-
-        const compressed = canvas.toDataURL("image/jpeg", 0.85);
-
-        setImageLibrary((prev) => ({
-          ...prev,
-          Uploads: [...prev.Uploads, compressed]
-        }));
-      };
-    };
+      }
+      await loadMediaAssets();
+    } catch (err: any) {
+      alert("Erro ao excluir imagem: " + err.message);
+    }
   };
 
   const selectImage = (url: string) => {
@@ -686,7 +755,7 @@ export default function AdminArticleEditor({
                 <span className="w-px h-6 bg-slate-800 my-auto"></span>
                 <button
                   type="button"
-                  onClick={() => openImageModal("editor")}
+                  onMouseDown={(e) => { e.preventDefault(); openImageModal("editor"); }}
                   className="px-3 py-1.5 rounded text-xs bg-slate-800 text-slate-200 hover:text-white"
                   title="Biblioteca de Imagens"
                 >
@@ -694,7 +763,7 @@ export default function AdminArticleEditor({
                 </button>
                 <button
                   type="button"
-                  onClick={openLinkModal}
+                  onMouseDown={(e) => { e.preventDefault(); openLinkModal(); }}
                   className="px-3 py-1.5 rounded text-xs bg-slate-800 text-slate-200 hover:text-white"
                   title="Inserir Link"
                 >
@@ -780,7 +849,7 @@ export default function AdminArticleEditor({
               ) : (
                 <button
                   type="button"
-                  onClick={() => openImageModal("destaque")}
+                  onMouseDown={(e) => { e.preventDefault(); openImageModal("destaque"); }}
                   className="w-full h-24 rounded-xl border border-dashed border-slate-800 hover:border-[#00ff88]/50 flex flex-col items-center justify-center gap-1.5 text-xs text-slate-400 hover:text-slate-200 transition-colors"
                 >
                   <span>🖼️ Escolher Capa Destaque</span>
@@ -939,11 +1008,16 @@ export default function AdminArticleEditor({
 
             <div className="mb-4">
               <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-[#00ff88] border border-slate-700">
-                <span>📤 Enviar Foto para Pasta</span>
+                {uploadProgress ? (
+                  <span>Enviando...</span>
+                ) : (
+                  <span>📤 Enviar Foto para Pasta</span>
+                )}
                 <input
                   type="file"
                   accept="image/*"
                   onChange={handleImageUpload}
+                  disabled={uploadProgress}
                   className="hidden"
                 />
               </label>
@@ -966,6 +1040,20 @@ export default function AdminArticleEditor({
                       alt="Thumbnail"
                       className="w-full h-full object-cover object-top"
                     />
+                    
+                    {currentFolder === "Uploads" && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deleteUploadImage(url);
+                        }}
+                        className="absolute top-1.5 right-1.5 z-30 bg-red-650/90 text-white rounded p-1.5 hover:bg-red-500 text-[10px] shadow"
+                      >
+                        🗑️
+                      </button>
+                    )}
+
                     <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center text-[10px] text-white font-bold transition-opacity">
                       Selecionar
                     </div>
