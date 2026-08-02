@@ -235,9 +235,9 @@ export default function AdminArticleEditor({
 
   // Configura separador de parágrafos padrão no WYSIWYG
   useEffect(() => {
-    if (editorMode === "visual") {
+    if (editorMode === "visual" && editorRef.current) {
       document.execCommand("defaultParagraphSeparator", false, "p");
-      if (editorRef.current) {
+      if (editorRef.current.innerHTML !== content) {
         editorRef.current.innerHTML = content;
       }
     }
