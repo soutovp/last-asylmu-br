@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import Header from "@/components/Header";
 import { isSupabaseConfigured } from "@/lib/supabase";
+import { UserRole } from "@/lib/permissions";
 
 interface GuideItem {
   id: string;
@@ -20,6 +21,9 @@ interface GuideItem {
   seo_title?: string;
   seo_description?: string;
   image_url?: string;
+  author_name?: string;
+  author_role?: string;
+  author_avatar?: string;
 }
 
 const ITEMS_PER_PAGE = 20;
@@ -137,6 +141,26 @@ function GuiasContent() {
             .single();
 
           if (data) {
+            let authorName = "Fernando Silva";
+            let authorRole = "Administrador";
+            let authorAvatar = "https://lastasylumplague.com/wp-content/uploads/2026/04/nicole-full-image-300x266.webp";
+
+            try {
+              const { data: profile } = await supabase
+                .from("profiles")
+                .select("first_name, last_name, role, avatar_url")
+                .eq("email", data.author_email || "admin@lastasylum.br")
+                .single();
+              if (profile) {
+                authorName = `${profile.first_name} ${profile.last_name}`;
+                const { ROLES_REGISTRY } = await import("@/lib/permissions");
+                authorRole = ROLES_REGISTRY[profile.role as UserRole]?.name || "Administrador";
+                authorAvatar = profile.avatar_url || authorAvatar;
+              }
+            } catch (err) {
+              console.error("Erro ao carregar perfil do autor:", err);
+            }
+
             setArticleDetail({
               id: data.id,
               title: data.title,
@@ -154,6 +178,9 @@ function GuiasContent() {
               seo_title: data.seo_title,
               seo_description: data.seo_description,
               image_url: data.image_url,
+              author_name: authorName,
+              author_role: authorRole,
+              author_avatar: authorAvatar,
             });
             if (data.seo_title || data.title) {
               document.title = `${data.seo_title || data.title} - Last Asylum BR`;
@@ -166,6 +193,21 @@ function GuiasContent() {
             const list = JSON.parse(stored) as any[];
             const found = list.find((a) => a.slug === activeSlug && a.type === "guia");
             if (found) {
+              let authorName = "Fernando Silva";
+              let authorRole = "Administrador";
+              let authorAvatar = "https://lastasylumplague.com/wp-content/uploads/2026/04/nicole-full-image-300x266.webp";
+
+              const localProfs = localStorage.getItem("local_profiles");
+              if (localProfs) {
+                const plist = JSON.parse(localProfs);
+                const foundProf = plist.find((p: any) => p.email === found.author_email);
+                if (foundProf) {
+                  authorName = `${foundProf.firstName} ${foundProf.lastName}`;
+                  authorRole = foundProf.role === "ADM" ? "Administrador" : foundProf.role;
+                  authorAvatar = foundProf.avatarUrl || foundProf.avatar_url || authorAvatar;
+                }
+              }
+
               setArticleDetail({
                 id: found.id || "local",
                 title: found.title,
@@ -179,6 +221,9 @@ function GuiasContent() {
                 seo_title: found.seo_title,
                 seo_description: found.seo_description,
                 image_url: found.image_url,
+                author_name: authorName,
+                author_role: authorRole,
+                author_avatar: authorAvatar,
               });
               document.title = `${found.seo_title || found.title} - Last Asylum BR`;
             }
@@ -254,9 +299,8 @@ function GuiasContent() {
                 </div>
               </div>
 
-              {/* Título & Resumo */}
               <div className="space-y-4">
-                <h1 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight leading-tight">
+                <h1 className="text-3xl sm:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-[#00ff88] tracking-tight leading-tight drop-shadow">
                   {articleDetail.title}
                 </h1>
                 <p className="text-sm sm:text-base text-slate-300 leading-relaxed border-l-4 border-cyan-400 pl-4 italic">
@@ -271,17 +315,39 @@ function GuiasContent() {
                 </div>
               )}
 
+              {/* Cartão do Autor */}
+              {articleDetail.author_name && (
+                <div className="flex items-center gap-3.5 p-4 rounded-2xl bg-slate-900/60 border border-slate-850 max-w-sm">
+                  <img 
+                    src={articleDetail.author_avatar} 
+                    alt={articleDetail.author_name} 
+                    className="w-10 h-10 rounded-full object-cover border border-cyan-400" 
+                  />
+                  <div>
+                    <h4 className="text-xs sm:text-sm font-bold text-white leading-none">
+                      {articleDetail.author_name}
+                    </h4>
+                    <span className="inline-block text-[9px] font-mono text-cyan-400 mt-1 uppercase font-bold tracking-wider">
+                      {articleDetail.author_role} • Autor
+                    </span>
+                  </div>
+                </div>
+              )}
+
               {/* Conteúdo Renderizado */}
               <div 
                 dangerouslySetInnerHTML={{ __html: articleDetail.content || "" }} 
                 className="prose prose-invert max-w-none text-slate-200 leading-relaxed text-sm sm:text-base border-t border-slate-800/80 pt-6
-                  [&_h2]:text-2xl [&_h2]:font-extrabold [&_h2]:text-white [&_h2]:mt-8 [&_h2]:mb-4
+                  [&_h2]:text-2xl [&_h2]:font-extrabold [&_h2]:text-cyan-400 [&_h2]:border-b [&_h2]:border-cyan-500/20 [&_h2]:pb-2 [&_h2]:mt-8 [&_h2]:mb-4
                   [&_h3]:text-xl [&_h3]:font-bold [&_h3]:text-slate-200 [&_h3]:mt-6 [&_h3]:mb-3
                   [&_p]:mb-4 [&_p]:leading-relaxed
                   [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:mb-4
                   [&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:mb-4
                   [&_a]:text-cyan-400 [&_a]:underline [&_a]:font-bold [&_a]:hover:text-cyan-300
-                  [&_img]:max-w-full [&_img]:rounded-2xl [&_img]:shadow-xl [&_img]:my-6 [&_img]:mx-auto [&_img]:block"
+                  [&_img]:max-w-full [&_img]:rounded-2xl [&_img]:shadow-xl [&_img]:my-6 [&_img]:mx-auto [&_img]:block
+                  [&_table]:w-full [&_table]:my-6 [&_table]:border-collapse [&_table]:rounded-xl [&_table]:overflow-hidden [&_table]:bg-slate-900/50 [&_table]:border [&_table]:border-slate-800
+                  [&_th]:bg-cyan-500/10 [&_th]:text-cyan-400 [&_th]:font-bold [&_th]:text-xs [&_th]:uppercase [&_th]:tracking-wider [&_th]:p-3 [&_th]:text-left [&_th]:border-b [&_th]:border-slate-800
+                  [&_td]:p-3 [&_td]:text-xs [&_td]:sm:text-sm [&_td]:text-slate-300 [&_td]:border-b [&_td]:border-slate-850 [&_td]:transition-colors [&_tr:hover]:bg-slate-800/30 [&_tr:nth-child(even)]:bg-slate-900/20"
               />
             </article>
           )}

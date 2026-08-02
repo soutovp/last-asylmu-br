@@ -224,31 +224,36 @@ export default function AdminDashboard({
       if (isSupabaseConfigured) {
         const { supabase } = await import("@/lib/supabase");
         
-        // Atualiza metadata do usuário no Supabase
-        const { error: metadataError } = await supabase.auth.updateUser({
-          data: {
+        // 1. Salva/Atualiza na tabela publica public.profiles via upsert
+        const { error: dbError } = await supabase
+          .from("profiles")
+          .upsert({
+            email: session.email,
             first_name: firstNameInput,
             last_name: lastNameInput,
             region: regionInput,
-          }
-        });
-
-        if (metadataError) {
-          setErrMsg(metadataError.message);
-          setSaveLoading(false);
-          return;
-        }
-
-        // Se houver alteração de senha
-        if (passwordInput) {
-          const { error: passError } = await supabase.auth.updateUser({
-            password: passwordInput
+            role: session.role,
+            avatar_url: session.avatarUrl
           });
-          if (passError) {
-            setErrMsg(passError.message);
-            setSaveLoading(false);
-            return;
+        
+        if (dbError) throw dbError;
+
+        // 2. Tenta atualizar no Supabase Auth se houver sessão (silencioso se falhar)
+        try {
+          await supabase.auth.updateUser({
+            data: {
+              first_name: firstNameInput,
+              last_name: lastNameInput,
+              region: regionInput,
+            }
+          });
+          if (passwordInput) {
+            await supabase.auth.updateUser({
+              password: passwordInput
+            });
           }
+        } catch (authErr) {
+          console.warn("Supabase Auth update ignored:", authErr);
         }
       }
 
@@ -287,56 +292,64 @@ export default function AdminDashboard({
     }, 2000);
   };
 
-  // Upload e compressão automática de imagem via Canvas
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Upload do Avatar diretamente para o Cloudinary
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = (event) => {
-      const img = new Image();
-      img.src = event.target?.result as string;
-      img.onload = () => {
-        const canvas = document.createElement("canvas");
-        const maxDimension = 180; // tamanho ideal e leve para avatar circular
-        let width = img.width;
-        let height = img.height;
+    const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || "orrs3pvy";
+    const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || "ml_default";
 
-        if (width > height) {
-          if (width > maxDimension) {
-            height = Math.round((height * maxDimension) / width);
-            width = maxDimension;
-          }
-        } else {
-          if (height > maxDimension) {
-            width = Math.round((width * maxDimension) / height);
-            height = maxDimension;
-          }
-        }
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("upload_preset", uploadPreset);
 
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext("2d");
-        ctx?.drawImage(img, 0, 0, width, height);
+      const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+        method: "POST",
+        body: formData,
+      });
 
-        // Compressão JPEG com qualidade 0.8
-        const compressedBase64 = canvas.toDataURL("image/jpeg", 0.8);
+      if (!res.ok) {
+        throw new Error("Erro na requisição para o servidor Cloudinary");
+      }
 
-        if (isSupabaseConfigured) {
-          import("@/lib/supabase").then(async ({ supabase }) => {
-            await supabase.auth.updateUser({
-              data: { avatar_url: compressedBase64 }
-            });
+      const data = await res.json();
+      const uploadedUrl = data.secure_url;
+
+      if (isSupabaseConfigured) {
+        const { supabase } = await import("@/lib/supabase");
+        
+        // 1. Salva/Atualiza na tabela public.profiles via upsert
+        await supabase
+          .from("profiles")
+          .upsert({
+            email: session.email,
+            avatar_url: uploadedUrl,
+            first_name: session.firstName || "",
+            last_name: session.lastName || "",
+            role: session.role
           });
-        }
 
-        const updated = updateSessionProfile({ avatarUrl: compressedBase64 });
-        if (updated) {
-          onSessionUpdate(updated);
+        // 2. Tenta salvar na auth de forma silenciosa
+        try {
+          await supabase.auth.updateUser({
+            data: { avatar_url: uploadedUrl }
+          });
+        } catch (authErr) {
+          console.warn("Ignored auth user update:", authErr);
         }
-      };
-    };
+      }
+
+      const updated = updateSessionProfile({ avatarUrl: uploadedUrl });
+      if (updated) {
+        onSessionUpdate(updated);
+      }
+      
+      alert("Foto de perfil atualizada com sucesso!");
+    } catch (err: any) {
+      alert("Erro ao enviar foto: " + err.message);
+    }
   };
 
   // Filtros de Artigos

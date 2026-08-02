@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { isSupabaseConfigured } from "@/lib/supabase";
+import { getSavedSession } from "@/lib/auth";
 
 export interface ArticleData {
   id?: string;
@@ -79,6 +80,7 @@ export default function AdminArticleEditor({
 
   // Determina se o artigo já foi publicado anteriormente
   const [alreadyPublished, setAlreadyPublished] = useState(false);
+  const [originalAuthorEmail, setOriginalAuthorEmail] = useState("");
 
   // Conteúdo do Editor
   const [content, setContent] = useState("");
@@ -187,6 +189,7 @@ export default function AdminArticleEditor({
             setIsFeatured(data.is_featured || false);
             setImageUrl(data.image_url || "");
             setContent(data.content || "");
+            setOriginalAuthorEmail(data.author_email || "");
             
             if (data.scheduled_at) {
               const schedTime = new Date(data.scheduled_at);
@@ -200,7 +203,7 @@ export default function AdminArticleEditor({
           // Fallback Local Storage
           const stored = localStorage.getItem("local_articles");
           if (stored) {
-            const list = JSON.parse(stored) as ArticleData[];
+            const list = JSON.parse(stored) as any[];
             const found = list.find((a) => a.id === articleId);
             if (found) {
               setTitle(found.title);
@@ -214,6 +217,7 @@ export default function AdminArticleEditor({
               setIsFeatured(found.is_featured || false);
               setImageUrl(found.image_url || "");
               setContent(found.content || "");
+              setOriginalAuthorEmail(found.author_email || "");
               
               if (found.scheduled_at) {
                 setAlreadyPublished(new Date(found.scheduled_at).getTime() <= Date.now());
@@ -487,10 +491,13 @@ export default function AdminArticleEditor({
     if (editorMode === "visual") {
       syncContentFromVisual();
     }
-
     const finalCategory = articleType === "guia" ? "Guias" : "Atualizações";
+    const session = getSavedSession();
+    const currentEmail = session?.email || "admin@lastasylum.br";
+    // Mantém o autor original se estiver editando, caso contrário atribui o e-mail logado atual
+    const authorEmail = articleId ? (originalAuthorEmail || currentEmail) : currentEmail;
 
-    const articlePayload: ArticleData = {
+    const articlePayload: ArticleData & { author_email?: string } = {
       id: articleId,
       title,
       summary,
@@ -506,6 +513,7 @@ export default function AdminArticleEditor({
       is_featured: isFeatured,
       category: finalCategory,
       image_url: imageUrl,
+      author_email: authorEmail,
     };
 
     try {
@@ -527,6 +535,7 @@ export default function AdminArticleEditor({
           is_featured: isFeatured,
           category: finalCategory,
           image_url: imageUrl,
+          author_email: authorEmail,
         };
 
         if (articleId) {

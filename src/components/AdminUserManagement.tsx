@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { UserRole, ROLES_REGISTRY, ADMIN_PAGES, getDynamicAdminPages, AdminPageDefinition } from "@/lib/permissions";
+import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 
 interface UserRecord {
   id: string;
@@ -15,48 +16,8 @@ interface UserRecord {
 }
 
 export default function AdminUserManagement() {
-  const [users, setUsers] = useState<UserRecord[]>([
-    {
-      id: "1",
-      firstName: "Fernando",
-      lastName: "Silva",
-      email: "admin@lastasylum.br",
-      role: "ADM",
-      birthDate: "1990-05-15",
-      region: "Sudeste",
-      createdAt: "2026-07-31"
-    },
-    {
-      id: "2",
-      firstName: "Carlos",
-      lastName: "Oliveira",
-      email: "carlos.super@lastasylum.br",
-      role: "SUPER",
-      birthDate: "1988-10-22",
-      region: "Sul",
-      createdAt: "2026-07-30"
-    },
-    {
-      id: "3",
-      firstName: "Mariana",
-      lastName: "Santos",
-      email: "mariana.news@lastasylum.br",
-      role: "R",
-      birthDate: "1995-02-12",
-      region: "Nordeste",
-      createdAt: "2026-07-28"
-    },
-    {
-      id: "4",
-      firstName: "Lucas",
-      lastName: "Mendes",
-      email: "lucas.heroes@lastasylum.br",
-      role: "E",
-      birthDate: "1993-08-05",
-      region: "Centro-Oeste",
-      createdAt: "2026-07-25"
-    },
-  ]);
+  const [users, setUsers] = useState<UserRecord[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const [pageMatrix, setPageMatrix] = useState<AdminPageDefinition[]>(() => {
     return getDynamicAdminPages();
@@ -71,47 +32,154 @@ export default function AdminUserManagement() {
   const [newRegion, setNewRegion] = useState("");
   const [newRole, setNewRole] = useState<UserRole>("R");
 
-  const handleChangeRole = (userId: string, newRole: UserRole) => {
-    setUsers((prev) =>
-      prev.map((u) => (u.id === userId ? { ...u, role: newRole } : u))
-    );
-  };
-
-  const handleDeleteUser = (userId: string) => {
-    if (confirm("Deseja realmente deletar este usuário?")) {
-      setUsers((prev) => prev.filter((u) => u.id !== userId));
+  const fetchUsers = async () => {
+    setLoading(true);
+    try {
+      if (isSupabaseConfigured) {
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("*")
+          .order("created_at", { ascending: true });
+        if (error) throw error;
+        if (data) {
+          setUsers(
+            data.map((u: any) => ({
+              id: u.email,
+              firstName: u.first_name,
+              lastName: u.last_name,
+              email: u.email,
+              role: u.role as UserRole,
+              birthDate: u.birth_date || "",
+              region: u.region || "",
+              createdAt: new Date(u.created_at).toISOString().split("T")[0]
+            }))
+          );
+        }
+      } else {
+        const stored = localStorage.getItem("local_profiles");
+        if (stored) {
+          setUsers(JSON.parse(stored));
+        } else {
+          // Inicializa com o seed e salva
+          const seed = [
+            {
+              id: "admin@lastasylum.br",
+              firstName: "Fernando",
+              lastName: "Silva",
+              email: "admin@lastasylum.br",
+              role: "ADM" as UserRole,
+              birthDate: "1990-05-15",
+              region: "Sudeste",
+              createdAt: "2026-07-31"
+            }
+          ];
+          localStorage.setItem("local_profiles", JSON.stringify(seed));
+          setUsers(seed);
+        }
+      }
+    } catch (err: any) {
+      console.error("Erro ao carregar usuários:", err);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleCreateUser = (e: React.FormEvent) => {
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  const handleChangeRole = async (userId: string, newRole: UserRole) => {
+    try {
+      if (isSupabaseConfigured) {
+        const { error } = await supabase
+          .from("profiles")
+          .update({ role: newRole })
+          .eq("email", userId);
+        if (error) throw error;
+      } else {
+        const updated = users.map((u) => (u.id === userId ? { ...u, role: newRole } : u));
+        localStorage.setItem("local_profiles", JSON.stringify(updated));
+      }
+      setUsers((prev) =>
+        prev.map((u) => (u.id === userId ? { ...u, role: newRole } : u))
+      );
+    } catch (err: any) {
+      alert("Erro ao alterar cargo: " + err.message);
+    }
+  };
+
+  const handleDeleteUser = async (userId: string) => {
+    if (confirm("Deseja realmente deletar este usuário?")) {
+      try {
+        if (isSupabaseConfigured) {
+          const { error } = await supabase
+            .from("profiles")
+            .delete()
+            .eq("email", userId);
+          if (error) throw error;
+        } else {
+          const filtered = users.filter((u) => u.id !== userId);
+          localStorage.setItem("local_profiles", JSON.stringify(filtered));
+        }
+        setUsers((prev) => prev.filter((u) => u.id !== userId));
+      } catch (err: any) {
+        alert("Erro ao deletar usuário: " + err.message);
+      }
+    }
+  };
+
+  const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newEmail || !newPassword || !newFirstName || !newLastName || !newBirthDate || !newRegion) {
       alert("Por favor, preencha todos os campos.");
       return;
     }
 
-    const newUser: UserRecord = {
-      id: String(users.length + 1),
-      firstName: newFirstName,
-      lastName: newLastName,
-      email: newEmail,
-      role: newRole,
-      birthDate: newBirthDate,
-      region: newRegion,
-      createdAt: new Date().toISOString().split("T")[0]
-    };
+    try {
+      const avatarUrl = `https://lastasylumplague.com/wp-content/uploads/2026/04/nicole-full-image-300x266.webp`; // padrão
 
-    setUsers([...users, newUser]);
+      if (isSupabaseConfigured) {
+        const { error } = await supabase
+          .from("profiles")
+          .insert([{
+            email: newEmail.trim().toLowerCase(),
+            first_name: newFirstName,
+            last_name: newLastName,
+            role: newRole,
+            birth_date: newBirthDate,
+            region: newRegion,
+            avatar_url: avatarUrl
+          }]);
+        if (error) throw error;
+      } else {
+        const newUser: UserRecord = {
+          id: newEmail.trim().toLowerCase(),
+          firstName: newFirstName,
+          lastName: newLastName,
+          email: newEmail.trim().toLowerCase(),
+          role: newRole,
+          birthDate: newBirthDate,
+          region: newRegion,
+          createdAt: new Date().toISOString().split("T")[0]
+        };
+        const updated = [...users, newUser];
+        localStorage.setItem("local_profiles", JSON.stringify(updated));
+      }
 
-    // Reset inputs
-    setNewEmail("");
-    setNewPassword("");
-    setNewFirstName("");
-    setNewLastName("");
-    setNewBirthDate("");
-    setNewRegion("");
-    setNewRole("R");
-    setShowCreateForm(false);
+      await fetchUsers();
+
+      // Reset inputs
+      setNewEmail("");
+      setNewPassword("");
+      setNewFirstName("");
+      setNewLastName("");
+      setNewBirthDate("");
+      setNewRegion("");
+      setNewRole("R");
+      setShowCreateForm(false);
+    } catch (err: any) {
+      alert("Erro ao criar usuário: " + err.message);
+    }
   };
 
   // Alterna o acesso de um cargo a um módulo específico na matriz dinâmica
@@ -276,54 +344,62 @@ export default function AdminUserManagement() {
       <div className="p-6 rounded-3xl bg-[#101623]/80 border border-slate-800">
         <h3 className="text-base font-bold text-white mb-4">Usuários Cadastrados no Sistema</h3>
 
-        <div className="space-y-3">
-          {users.map((u) => (
-            <div
-              key={u.id}
-              className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center font-extrabold text-slate-200">
-                  {u.firstName.charAt(0)}
-                </div>
-                <div>
-                  <h4 className="text-sm font-bold text-white">
-                    {u.firstName} {u.lastName}
-                  </h4>
-                  <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-xs font-mono text-slate-400">
-                    <span>E-mail: {u.email}</span>
-                    <span>Nascimento: {u.birthDate}</span>
-                    <span>Região: {u.region}</span>
+        {loading ? (
+          <div className="py-8 flex justify-center">
+            <div className="w-6 h-6 border-2 border-[#00ff88] border-t-transparent rounded-full animate-spin"></div>
+          </div>
+        ) : users.length === 0 ? (
+          <p className="text-xs text-slate-500 py-4">Nenhum usuário cadastrado.</p>
+        ) : (
+          <div className="space-y-3">
+            {users.map((u) => (
+              <div
+                key={u.id}
+                className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center font-extrabold text-slate-200">
+                    {u.firstName.charAt(0)}
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-white">
+                      {u.firstName} {u.lastName}
+                    </h4>
+                    <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-xs font-mono text-slate-400">
+                      <span>E-mail: {u.email}</span>
+                      <span>Nascimento: {u.birthDate}</span>
+                      <span>Região: {u.region}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="flex items-center gap-3 self-end sm:self-center">
-                <span className="text-xs font-mono text-slate-400">Cargo:</span>
-                <select
-                  value={u.role}
-                  onChange={(e) => handleChangeRole(u.id, e.target.value as UserRole)}
-                  className="px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-700 text-xs font-bold text-white focus:outline-none focus:border-[#00ff88] mr-1"
-                >
-                  {(Object.keys(ROLES_REGISTRY) as UserRole[]).map((r) => (
-                    <option key={r} value={r}>
-                      {ROLES_REGISTRY[r].name} ({r})
-                    </option>
-                  ))}
-                </select>
+                <div className="flex items-center gap-3 self-end sm:self-center">
+                  <span className="text-xs font-mono text-slate-400">Cargo:</span>
+                  <select
+                    value={u.role}
+                    onChange={(e) => handleChangeRole(u.id, e.target.value as UserRole)}
+                    className="px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-700 text-xs font-bold text-white focus:outline-none focus:border-[#00ff88] mr-1"
+                  >
+                    {(Object.keys(ROLES_REGISTRY) as UserRole[]).map((r) => (
+                      <option key={r} value={r}>
+                        {ROLES_REGISTRY[r].name} ({r})
+                      </option>
+                    ))}
+                  </select>
 
-                <button
-                  type="button"
-                  onClick={() => handleDeleteUser(u.id)}
-                  className="px-3 py-1.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 text-xs font-bold border border-red-500/30 transition-colors"
-                  title="Deletar Usuário"
-                >
-                  🗑️ Deletar
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteUser(u.id)}
+                    className="px-3 py-1.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 text-xs font-bold border border-red-500/30 transition-colors"
+                    title="Deletar Usuário"
+                  >
+                    🗑️ Deletar
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* SEÇÃO DE ALTERAÇÃO DE ACESSOS (MATRIZ DINÂMICA DE PERMISSÕES) */}
