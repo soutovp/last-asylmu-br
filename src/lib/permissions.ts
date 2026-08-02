@@ -53,9 +53,7 @@ export interface AdminPageDefinition {
 }
 
 /**
- * Registro Centralizado de Páginas Administrativas.
- * Para adicionar uma nova página no futuro, basta adicioná-la a esta lista!
- * ADM e SUPER herdarão o acesso automaticamente sem necessidade de duplicar regras.
+ * Registro Centralizado Padrão de Páginas Administrativas.
  */
 export const ADMIN_PAGES: AdminPageDefinition[] = [
   {
@@ -96,24 +94,41 @@ export const ADMIN_PAGES: AdminPageDefinition[] = [
 ];
 
 /**
+ * Retorna as páginas administrativas carregando dinamicamente as permissões customizadas de localStorage.
+ */
+export function getDynamicAdminPages(): AdminPageDefinition[] {
+  if (typeof window !== "undefined") {
+    const saved = localStorage.getItem("admin_page_permissions_matrix");
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {
+        return ADMIN_PAGES;
+      }
+    }
+  }
+  return ADMIN_PAGES;
+}
+
+/**
  * Função de Validação Automática de Acesso por Página e Cargo:
  * 1. ADM possui acesso a absolutamente TODAS as páginas.
  * 2. SUPER possui acesso a todas as páginas permitidas para Redatores (R) e Editores (E), além de SUPER.
  * 3. R e E possuem acesso se seu cargo constar na lista allowedRoles da página.
  */
 export function canUserAccessPage(userRole: UserRole, pageId: string): boolean {
-  const page = ADMIN_PAGES.find((p) => p.id === pageId);
-  if (!page) return false;
-
-  // 1. ADM tem acesso total
+  if (pageId === "configuracoes") return true;
   if (userRole === "ADM") return true;
 
-  // 2. SUPER herda tudo que for liberado para R ou E
+  const pages = getDynamicAdminPages();
+  const page = pages.find((p) => p.id === pageId);
+  if (!page) return false;
+
+  // SUPER herda tudo que for liberado para R ou E
   if (userRole === "SUPER") {
     return page.allowedRoles.some((r) => r === "R" || r === "E" || r === "SUPER");
   }
 
-  // 3. Permissão direta
   return page.allowedRoles.includes(userRole);
 }
 
@@ -121,5 +136,5 @@ export function canUserAccessPage(userRole: UserRole, pageId: string): boolean {
  * Retorna a lista de páginas que o usuário logado tem permissão para visualizar no menu.
  */
 export function getAccessiblePagesForUser(userRole: UserRole): AdminPageDefinition[] {
-  return ADMIN_PAGES.filter((page) => canUserAccessPage(userRole, page.id));
+  return getDynamicAdminPages().filter((page) => canUserAccessPage(userRole, page.id));
 }

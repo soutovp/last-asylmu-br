@@ -351,7 +351,7 @@ export default function Calculators() {
   };
 
   return (
-    <section className="relative py-12 sm:py-20 bg-transparent">
+    <section className="relative py-12 sm:py-20 bg-transparent overflow-hidden">
       {/* GLOW DECORATIVO DE FUNDO */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] bg-[#00ff88]/5 rounded-full blur-[180px] pointer-events-none"></div>
 

@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { UserSession, logoutAdmin, updateSessionRole } from "@/lib/auth";
-import { getAccessiblePagesForUser, ROLES_REGISTRY, UserRole } from "@/lib/permissions";
+import { UserSession, logoutAdmin } from "@/lib/auth";
+import { getAccessiblePagesForUser, ROLES_REGISTRY } from "@/lib/permissions";
 
 interface AdminSidebarProps {
   session: UserSession;
@@ -11,6 +11,8 @@ interface AdminSidebarProps {
   onSelectPage: (pageId: string) => void;
   onLogout: () => void;
   onSessionUpdate: (updated: UserSession) => void;
+  collapsed: boolean;
+  onToggleCollapse: () => void;
 }
 
 export default function AdminSidebar({
@@ -18,27 +20,14 @@ export default function AdminSidebar({
   activePageId,
   onSelectPage,
   onLogout,
-  onSessionUpdate,
+  collapsed,
+  onToggleCollapse,
 }: AdminSidebarProps) {
-  const [showRoleMenu, setShowRoleMenu] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const accessiblePages = getAccessiblePagesForUser(session.role);
   const pagesToRender = accessiblePages.length > 0 ? accessiblePages : getAccessiblePagesForUser("ADM");
   const roleInfo = ROLES_REGISTRY[session.role] || ROLES_REGISTRY.ADM;
-
-  const handleSwitchRole = (newRole: UserRole) => {
-    const updated = updateSessionRole(newRole);
-    if (updated) {
-      onSessionUpdate(updated);
-      // Se a página atual não for acessível no novo papel, ajusta para a primeira liberada
-      const newPages = getAccessiblePagesForUser(newRole);
-      if (!newPages.some((p) => p.id === activePageId) && newPages.length > 0) {
-        onSelectPage(newPages[0].id);
-      }
-    }
-    setShowRoleMenu(false);
-  };
 
   const handleLogout = async () => {
     await logoutAdmin();
@@ -65,32 +54,53 @@ export default function AdminSidebar({
 
       {/* SIDEBAR CONTAINER */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-72 bg-[#101623]/98 border-r border-slate-800/90 backdrop-blur-2xl flex flex-col justify-between transition-transform duration-300 transform ${
+        className={`fixed inset-y-0 left-0 z-50 bg-[#101623]/98 border-r border-slate-800/90 backdrop-blur-2xl flex flex-col justify-between transition-all duration-300 transform ${
           mobileMenuOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
-        }`}
+        } ${collapsed ? "w-20" : "w-72"}`}
       >
         <div className="flex flex-col h-full justify-between">
           <div>
-            {/* 1. TOPO DA SIDEBAR: BRANDING & TÍTULO */}
-            <div className="p-6 border-b border-slate-800/80">
-              <Link href="/" className="flex items-center gap-2 group">
-                <span className="font-black text-xl tracking-wider text-white group-hover:text-[#00ff88] transition-colors">
-                  LAST ASYLUM
-                </span>
-                <sup className="text-xs font-mono font-bold text-[#00ff88] align-super border border-[#00ff88]/40 px-2 py-0.5 rounded bg-[#101623] toxic-text-glow">
-                  BR
-                </sup>
-              </Link>
-              <span className="mt-1.5 block text-[11px] font-mono uppercase tracking-widest text-slate-400 font-semibold">
-                Painel Administrativo
-              </span>
+            {/* 1. TOPO DA SIDEBAR: BRANDING & BOTÃO DE RECOLHER */}
+            <div className={`p-4 border-b border-slate-800/80 flex items-center ${collapsed ? "justify-center" : "justify-between"}`}>
+              {!collapsed ? (
+                <>
+                  <Link href="/" className="flex items-center gap-1 group">
+                    <span className="font-black text-sm tracking-wider text-white group-hover:text-[#00ff88] transition-colors">
+                      LAST ASYLUM
+                    </span>
+                    <sup className="text-[9px] font-mono font-bold text-[#00ff88] align-super border border-[#00ff88]/40 px-1 py-0.2 rounded bg-[#101623]">
+                      BR
+                    </sup>
+                  </Link>
+                  <button
+                    onClick={onToggleCollapse}
+                    className="p-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors"
+                    title="Recolher Menu"
+                  >
+                    ◀
+                  </button>
+                </>
+              ) : (
+                <div className="flex flex-col items-center gap-2">
+                  <button
+                    onClick={onToggleCollapse}
+                    className="p-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors"
+                    title="Expandir Menu"
+                  >
+                    ▶
+                  </button>
+                  <span className="font-mono text-xs text-[#00ff88] font-bold">LA</span>
+                </div>
+              )}
             </div>
 
             {/* 2. NAVEGAÇÃO DE PÁGINAS ADMINISTRATIVAS */}
-            <div className="p-4 space-y-1.5">
-              <span className="px-3 text-[10px] font-mono uppercase font-bold tracking-widest text-slate-400 block mb-2">
-                Módulos de Sistema
-              </span>
+            <div className="p-2 space-y-1.5">
+              {!collapsed && (
+                <span className="px-3 text-[10px] font-mono uppercase font-bold tracking-widest text-slate-400 block mb-2">
+                  Módulos
+                </span>
+              )}
 
               {pagesToRender.map((page) => {
                 const isActive = activePageId === page.id;
@@ -101,18 +111,21 @@ export default function AdminSidebar({
                       onSelectPage(page.id);
                       setMobileMenuOpen(false);
                     }}
-                    className={`w-full flex items-center justify-between px-3.5 py-3 rounded-2xl text-xs font-bold transition-all duration-200 group text-left ${
+                    className={`w-full flex items-center rounded-2xl text-xs font-bold transition-all duration-200 group ${
+                      collapsed ? "justify-center p-3" : "justify-between px-3.5 py-3"
+                    } ${
                       isActive
                         ? "bg-[#00ff88] text-slate-950 shadow-[0_0_20px_rgba(0,255,136,0.35)] transform translate-x-1"
                         : "text-slate-300 hover:text-white hover:bg-slate-800/60"
                     }`}
+                    title={collapsed ? page.label : undefined}
                   >
                     <div className="flex items-center gap-3">
                       <span className="text-base">{page.icon}</span>
-                      <span>{page.label}</span>
+                      {!collapsed && <span>{page.label}</span>}
                     </div>
 
-                    {page.allowedRoles.includes("ADM") && page.id === "usuarios" && (
+                    {!collapsed && page.allowedRoles.includes("ADM") && page.id === "usuarios" && (
                       <span className="text-[9px] font-mono font-black uppercase px-1.5 py-0.5 rounded bg-red-500/20 text-red-400 border border-red-500/40">
                         ADM
                       </span>
@@ -124,68 +137,63 @@ export default function AdminSidebar({
           </div>
 
           {/* 3. RODAPÉ DA SIDEBAR: INFORMAÇÕES DE USUÁRIO E CONFIGURAÇÕES */}
-          <div className="p-4 border-t border-slate-800/80 bg-slate-950/60 relative">
+          <div className="p-2 border-t border-slate-800/80 bg-slate-950/60 relative">
             
-            {/* DROPDOWN MENU PARA ALTERNÂNCIA RÁPIDA DE PERFIL */}
-            {showRoleMenu && (
-              <div className="absolute bottom-full left-4 right-4 mb-2 p-2 rounded-2xl bg-[#101623] border border-[#00ff88]/30 shadow-2xl space-y-1 backdrop-blur-2xl animate-in fade-in slide-in-from-bottom-2 duration-200">
-                <span className="block px-3 py-1 text-[10px] font-mono text-slate-400 font-bold uppercase">
-                  Alternar Função (Simulador RBAC)
-                </span>
-                {(Object.keys(ROLES_REGISTRY) as UserRole[]).map((r) => (
-                  <button
-                    key={r}
-                    onClick={() => handleSwitchRole(r)}
-                    className={`w-full px-3 py-2 rounded-xl text-xs font-bold text-left flex items-center justify-between transition-colors ${
-                      session.role === r
-                        ? "bg-[#00ff88]/20 text-[#00ff88]"
-                        : "text-slate-300 hover:bg-slate-800"
-                    }`}
-                  >
-                    <span>{ROLES_REGISTRY[r].name}</span>
-                    <span className={`px-1.5 py-0.5 rounded text-[9px] font-mono border ${ROLES_REGISTRY[r].badgeColor}`}>
-                      {r}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            )}
-
             {/* CARD DE INFORMAÇÕES DO USUÁRIO LOGADO */}
-            <div className="p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-[#00ff88]/10 border border-[#00ff88]/30 flex items-center justify-center font-bold text-sm text-[#00ff88]">
-                    {session.email.charAt(0).toUpperCase()}
-                  </div>
-                  <div className="overflow-hidden">
-                    <span className="block text-xs font-bold text-white truncate max-w-[130px]">
-                      {session.email}
+            <div className={`rounded-2xl bg-slate-900/90 border border-slate-800 space-y-3 ${collapsed ? "p-1.5" : "p-3.5"}`}>
+              <div className="flex flex-col items-center text-center space-y-2">
+                {/* Foto do Usuário */}
+                <div className={`relative rounded-full overflow-hidden border-2 border-[#00ff88]/30 shadow-[0_0_10px_rgba(0,255,136,0.2)] bg-slate-800 flex items-center justify-center ${collapsed ? "w-10 h-10" : "w-14 h-14"}`}>
+                  <img
+                    src={session.avatarUrl || "https://api.dicebear.com/7.x/adventurer/svg?seed=Admin"}
+                    alt="Avatar do Usuário"
+                    className="w-full h-full object-cover object-top"
+                  />
+                </div>
+                
+                {/* Nome e Sobrenome (Apenas se não estiver colapsado) */}
+                {!collapsed && (
+                  <div className="w-full">
+                    <span className="block text-xs sm:text-sm font-black text-white truncate px-1">
+                      {session.firstName || "Administrador"} {session.lastName || ""}
                     </span>
-                    <span className={`inline-block mt-0.5 px-2 py-0.5 rounded-full text-[9px] font-mono font-bold border ${roleInfo.badgeColor}`}>
+                    <span className={`inline-block mt-0.5 px-2.5 py-0.5 rounded-full text-[9px] font-mono font-black border ${roleInfo.badgeColor}`}>
                       {roleInfo.shortName}
                     </span>
                   </div>
-                </div>
+                )}
               </div>
 
               {/* AÇÕES DO RODAPÉ (CONFIGURAÇÃO DE PERFIL E LOGOUT) */}
-              <div className="flex items-center justify-between pt-2 border-t border-slate-800/80 gap-2">
+              <div className={`flex border-t border-slate-800/80 gap-1.5 pt-2 ${collapsed ? "flex-col items-center" : "flex-row justify-between"}`}>
                 <button
-                  onClick={() => setShowRoleMenu(!showRoleMenu)}
-                  className="flex-1 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-bold flex items-center justify-center gap-1.5 transition-colors"
-                  title="Alterar Função de Acesso"
+                  type="button"
+                  onClick={() => {
+                    onSelectPage("configuracoes");
+                    setMobileMenuOpen(false);
+                  }}
+                  className={`rounded-xl text-[11px] font-bold flex items-center justify-center gap-1.5 transition-all ${
+                    collapsed ? "w-8 h-8" : "flex-1 px-3 py-1.5"
+                  } ${
+                    activePageId === "configuracoes"
+                      ? "bg-[#00ff88] text-slate-950 shadow-[0_0_12px_rgba(0,255,136,0.3)]"
+                      : "bg-slate-800 hover:bg-slate-700 text-slate-300"
+                  }`}
+                  title="Configurações da Conta"
                 >
-                  <span>⚙️ Cargo</span>
+                  <span>⚙️</span>
+                  {!collapsed && <span>Configurações</span>}
                 </button>
 
                 <button
                   onClick={handleLogout}
-                  className="px-3 py-1.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 text-[11px] font-bold border border-red-500/30 flex items-center justify-center gap-1 transition-colors"
+                  className={`rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 text-[11px] font-bold border border-red-500/30 flex items-center justify-center gap-1 transition-colors ${
+                    collapsed ? "w-8 h-8" : "px-3 py-1.5"
+                  }`}
                   title="Encerrar Sessão"
                 >
-                  <span>Sair</span>
                   <span>↳</span>
+                  {!collapsed && <span>Sair</span>}
                 </button>
               </div>
             </div>
