@@ -496,12 +496,12 @@ export default function AdminDashboard({
                               </div>
                               <p className="text-xs text-slate-400 mt-1 line-clamp-2">{news.summary}</p>
                               <a
-                                href={`/noticias?slug=${news.slug}`}
+                                href={`/noticias/${news.slug}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="text-[10px] font-mono text-[#00ff88] hover:underline block mt-2"
                               >
-                                URL: /noticias?slug={news.slug}
+                                URL: /noticias/{news.slug}
                               </a>
                             </div>
                             <div className="flex items-center gap-2 self-end sm:self-center">
@@ -647,12 +647,12 @@ export default function AdminDashboard({
                               </div>
                               <p className="text-xs text-slate-400 mt-1 line-clamp-2">{guide.summary}</p>
                               <a
-                                 href={`/guias?slug=${guide.slug}`}
+                                 href={`/guias/${guide.slug}`}
                                  target="_blank"
                                  rel="noopener noreferrer"
                                  className="text-[10px] font-mono text-[#00ff88] hover:underline block mt-2"
                               >
-                                 URL: /guias?slug={guide.slug}
+                                 URL: /guias/{guide.slug}
                               </a>
                             </div>
                             <div className="flex items-center gap-2 self-end sm:self-center">
