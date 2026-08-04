@@ -1,8 +1,13 @@
 import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 
+import { headers } from "next/headers";
+
 export async function GET() {
-  const baseUrl = "https://lastasylum.com.br";
+  const headersList = await headers();
+  const host = headersList.get("host") || "lapbr.netlify.app";
+  const protocol = host.startsWith("localhost") || host.startsWith("127.0.0.1") ? "http" : "https";
+  const baseUrl = `${protocol}://${host}`;
 
   // 1. Rotas estáticas
   const staticRoutes = [
