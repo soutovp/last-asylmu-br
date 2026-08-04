@@ -20,7 +20,10 @@ export const metadata: Metadata = {
   description: "Comunidade brasileira de Last Asylum. Guias de sobrevivência, calculadoras de recursos, patch notes e atualizações oficiais.",
   icons: {
     icon: "/images/icon-last-asylum-br.png",
-  }
+  },
+  verification: {
+    google: "e3xRGd7jXgG6w2BGpVsdF8Voirfez3TEHqmdz3lvbYo",
+  },
 };
 
 export default function RootLayout({
