@@ -15,6 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://lastasylum.com.br"),
   title: "Last Asylum BR - Guias, Calculadoras e Novidades",
   description: "Comunidade brasileira de Last Asylum. Guias de sobrevivência, calculadoras de recursos, patch notes e atualizações oficiais.",
   icons: {

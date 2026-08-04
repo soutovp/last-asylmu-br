@@ -5,6 +5,7 @@ import Header from "@/components/Header";
 import { supabase } from "@/lib/supabase";
 import { ROLES_REGISTRY } from "@/lib/permissions";
 import { UserRole } from "@/lib/permissions";
+import ViewCounterTrigger from "@/components/ViewCounterTrigger";
 
 // Métodos de geração de Metadados em tempo de execução
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
@@ -125,6 +126,9 @@ export default async function GuiaDetailPage({ params }: { params: Promise<{ slu
                   {article.category || "Guias"}
                 </span>
                 <span className="text-xs font-mono text-slate-400">{formattedDate}</span>
+                <span className="text-xs font-mono text-slate-500 flex items-center gap-1.5">
+                  <span>👁️</span> <span>{article.views || 0} visualizações</span>
+                </span>
               </div>
             </div>
 
@@ -176,6 +180,7 @@ export default async function GuiaDetailPage({ params }: { params: Promise<{ slu
           </article>
         </main>
       </div>
+      <ViewCounterTrigger articleId={article.id} />
     </div>
   );
 }
