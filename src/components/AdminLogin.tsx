@@ -86,7 +86,7 @@ export default function AdminLogin({ onSuccess }: AdminLoginProps) {
         </div>
 
         <div className="flex justify-center mb-4">
-          <img src="/images/last-asylum-br-logo.png" alt="Logo" className="h-14 w-auto object-contain" />
+          <img src="/images/last-asylum-br-logo.webp" alt="Logo" className="h-14 w-auto object-contain" />
         </div>
         <p className="mt-2 text-xs text-slate-400">
           {view === "login"

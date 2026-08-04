@@ -39,7 +39,7 @@ export default function AdminSidebar({
       {/* BOTÃO MOBILE HAMBÚRGUER (EXIBIDO APENAS EM DISPOSITIVOS MÓVEIS) */}
       <div className="lg:hidden sticky top-0 z-40 bg-[#101623]/95 border-b border-slate-800 p-4 flex items-center justify-between backdrop-blur-xl">
         <div className="flex items-center">
-          <img src="/images/last-asylum-br-logo.png" alt="Logo" className="h-7 w-auto object-contain" />
+          <img src="/images/last-asylum-br-logo.webp" alt="Logo" className="h-7 w-auto object-contain" />
         </div>
         <button
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -62,7 +62,7 @@ export default function AdminSidebar({
               {!collapsed ? (
                 <>
                   <Link href="/" className="flex items-center group">
-                    <img src="/images/last-asylum-br-logo.png" alt="Logo" className="h-[70px] w-auto object-contain" />
+                    <img src="/images/last-asylum-br-logo.webp" alt="Logo" className="h-[70px] w-auto object-contain" />
                   </Link>
                   <button
                     onClick={onToggleCollapse}
@@ -81,7 +81,7 @@ export default function AdminSidebar({
                   >
                     ▶
                   </button>
-                  <img src="/images/icon-last-asylum-br.png" alt="Icon" className="w-5 h-5 object-contain" />
+                  <img src="/images/icon-last-asylum-br.webp" alt="Icon" className="w-5 h-5 object-contain" />
                 </div>
               )}
             </div>

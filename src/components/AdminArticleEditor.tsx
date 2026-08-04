@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { isSupabaseConfigured } from "@/lib/supabase";
 import { getSavedSession } from "@/lib/auth";
+import { compressImageToWebp } from "@/lib/imageCompression";
 
 export interface ArticleData {
   id?: string;
@@ -389,8 +390,11 @@ export default function AdminArticleEditor({
 
     setUploadProgress(true);
     try {
+      // Converte a imagem para WebP e comprime antes do upload
+      const optimizedFile = await compressImageToWebp(file, 1200, 1200, 0.8);
+
       const formData = new FormData();
-      formData.append("file", file);
+      formData.append("file", optimizedFile);
       formData.append("upload_preset", cloudinaryUploadPreset);
 
       const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudinaryCloudName}/image/upload`, {

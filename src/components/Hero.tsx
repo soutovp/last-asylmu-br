@@ -12,7 +12,7 @@ export default function Hero() {
         {/* VILA BACKGROUND IMAGE FULL WIDTH */}
         <div className="absolute inset-0 z-0">
           <Image
-            src="/images/village_banner_2.png"
+            src="/images/village_banner_2.webp"
             alt="Visão Ilustrada Oficial da Vila de Last Asylum Plague"
             fill
             priority
@@ -30,9 +30,12 @@ export default function Hero() {
         {/* TÍTULO NO BANNER COM LOGO 'LAST ASYLUM BR' (BR ELEVADO) */}
         <div className="relative z-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 sm:pt-16 text-center w-full">
           <div className="flex justify-center mb-4">
-            <img 
-              src="/images/last-asylum-br-logo.png" 
+            <Image 
+              src="/images/last-asylum-br-logo.webp" 
               alt="Last Asylum BR Logo" 
+              width={400}
+              height={250}
+              priority
               className="h-[150px] md:h-[250px] w-auto object-contain drop-shadow-[0_4px_25px_rgba(0,255,136,0.25)] animate-in zoom-in duration-300"
             />
           </div>

@@ -7,6 +7,7 @@ import AdminUserManagement from "./AdminUserManagement";
 import AdminArticleEditor, { ArticleData } from "./AdminArticleEditor";
 import { canUserAccessPage, getAccessiblePagesForUser, ADMIN_PAGES } from "@/lib/permissions";
 import { isSupabaseConfigured } from "@/lib/supabase";
+import { compressImageToWebp } from "@/lib/imageCompression";
 
 interface AdminDashboardProps {
   session: UserSession;
@@ -301,8 +302,11 @@ export default function AdminDashboard({
     const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || "ml_default";
 
     try {
+      // Converte o avatar para WebP com tamanho menor (ex: 300x300 pixels para avatars)
+      const optimizedFile = await compressImageToWebp(file, 300, 300, 0.85);
+
       const formData = new FormData();
-      formData.append("file", file);
+      formData.append("file", optimizedFile);
       formData.append("upload_preset", uploadPreset);
 
       const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {

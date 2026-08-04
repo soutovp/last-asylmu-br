@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import Image from "next/image";
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -68,9 +69,12 @@ export default function Header() {
           
           {/* LOGO OFICIAL 'LAST ASYLUM BR' */}
           <Link href="/" className="flex items-center group">
-            <img 
-              src="/images/last-asylum-br-logo.png" 
+            <Image 
+              src="/images/last-asylum-br-logo.webp" 
               alt="Last Asylum BR Logo" 
+              width={160}
+              height={48}
+              priority
               className="h-10 sm:h-12 w-auto object-contain transition-transform duration-300 group-hover:scale-[1.02]"
             />
           </Link>

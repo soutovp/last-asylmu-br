@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { isSupabaseConfigured } from "@/lib/supabase";
 
 interface NewsItem {
@@ -194,7 +195,13 @@ export default function NewsSection() {
                       {/* IMAGEM DO DESTAQUE (Com fallback) */}
                       <div className="w-full md:w-1/2 aspect-[16/9] rounded-2xl bg-slate-900 border border-slate-800 relative overflow-hidden flex items-center justify-center">
                         {item.image_url ? (
-                          <img src={item.image_url} alt={item.title} className="w-full h-full object-cover" />
+                          <Image 
+                            src={item.image_url} 
+                            alt={item.title} 
+                            fill
+                            sizes="(max-width: 768px) 100vw, 50vw"
+                            className="object-cover" 
+                          />
                         ) : (
                           <>
                             <div className="absolute inset-0 bg-gradient-to-tr from-[#00ff88]/10 via-transparent to-amber-500/10"></div>
@@ -298,11 +305,13 @@ export default function NewsSection() {
                     
                     {/* Imagem Destaque no topo do card */}
                     {news.image_url && (
-                      <div className="aspect-[16/9] w-full overflow-hidden border-b border-slate-850">
-                        <img 
+                      <div className="aspect-[16/9] w-full overflow-hidden border-b border-slate-850 relative">
+                        <Image 
                           src={news.image_url} 
                           alt={news.title} 
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+                          fill
+                          sizes="(max-width: 768px) 100vw, 33vw"
+                          className="object-cover group-hover:scale-105 transition-transform duration-500" 
                         />
                       </div>
                     )}

@@ -389,7 +389,7 @@ export default function Calculators() {
               <div className="relative z-10 flex items-center gap-3">
                 <div className="relative w-24 h-24 drop-shadow-[0_0_20px_rgba(0,255,136,0.4)]">
                   <Image
-                    src="/images/antitoxin_image.png"
+                    src="/images/antitoxin_image.webp"
                     alt="Frasco de Antitoxina"
                     fill
                     sizes="96px"
@@ -497,7 +497,7 @@ export default function Calculators() {
                   <div className="flex items-center justify-center gap-2.5">
                     <div className="relative w-9 h-9 flex-shrink-0">
                       <Image
-                        src="/images/antitoxin_image.png"
+                        src="/images/antitoxin_image.webp"
                         alt="Icone Antitoxina"
                         fill
                         sizes="36px"
@@ -527,7 +527,7 @@ export default function Calculators() {
               <div className="relative z-10 flex items-center gap-3">
                 <div className="relative w-24 h-24 drop-shadow-[0_0_20px_rgba(245,158,11,0.4)]">
                   <Image
-                    src="/images/recruit_shard.png"
+                    src="/images/recruit_shard.webp"
                     alt="Fragmento de Herói"
                     fill
                     sizes="96px"
@@ -643,7 +643,7 @@ export default function Calculators() {
                   <div className="flex items-center justify-center gap-2.5">
                     <div className="relative w-9 h-9 flex-shrink-0">
                       <Image
-                        src="/images/recruit_shard.png"
+                        src="/images/recruit_shard.webp"
                         alt="Icone Fragmento"
                         fill
                         sizes="36px"
@@ -672,7 +672,7 @@ export default function Calculators() {
               <div className="relative z-10 flex items-center gap-3">
                 <div className="relative w-24 h-24 drop-shadow-[0_0_20px_rgba(6,182,212,0.4)]">
                   <Image
-                    src="/images/sign_medal.png"
+                    src="/images/sign_medal.webp"
                     alt="Medalha de Habilidade"
                     fill
                     sizes="96px"
@@ -780,7 +780,7 @@ export default function Calculators() {
                   <div className="flex items-center justify-center gap-2.5">
                     <div className="relative w-9 h-9 flex-shrink-0">
                       <Image
-                        src="/images/sign_medal.png"
+                        src="/images/sign_medal.webp"
                         alt="Icone Medalha Habilidade"
                         fill
                         sizes="36px"
