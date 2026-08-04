@@ -34,13 +34,49 @@ const getCategoryStyles = (category: string) => {
   }
 };
 
-export default function NewsSection() {
+interface NewsSectionProps {
+  initialArticles?: any[];
+}
+
+export default function NewsSection({ initialArticles = [] }: NewsSectionProps) {
   const [selectedCategory, setSelectedCategory] = useState<string>("Todos");
-  const [newsList, setNewsList] = useState<NewsItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  
+  // Função auxiliar para formatar notícias vindas do banco ou fallback
+  const formatArticles = (list: any[]) => {
+    const published = list.filter((item: any) => 
+      !item.scheduled_at || new Date(item.scheduled_at).getTime() <= Date.now()
+    );
+
+    return published.map((item: any) => ({
+      id: item.id,
+      title: item.title,
+      category: item.category || "Atualizações",
+      date: new Date(item.created_at).toLocaleDateString("pt-BR", {
+        day: "2-digit",
+        month: "long",
+        year: "numeric",
+      }),
+      readTime: `${Math.max(2, Math.ceil((item.content || "").length / 800))} min de leitura`,
+      summary: item.summary,
+      isFeatured: item.is_featured || false,
+      tagColor: getCategoryStyles(item.category || "Atualizações"),
+      slug: item.slug,
+      type: item.type,
+      image_url: item.image_url,
+    }));
+  };
+
+  const [newsList, setNewsList] = useState<NewsItem[]>(() => formatArticles(initialArticles));
+  const [loading, setLoading] = useState(initialArticles.length === 0);
   const [carouselIndex, setCarouselIndex] = useState(0);
 
   useEffect(() => {
+    // Se já temos notícias carregadas pelo servidor, não precisamos fazer fetch no client-side
+    if (initialArticles.length > 0) {
+      setLoading(false);
+      return;
+    }
+
     const fetchNews = async () => {
       try {
         if (isSupabaseConfigured) {
@@ -52,29 +88,7 @@ export default function NewsSection() {
             .order("created_at", { ascending: false });
 
           if (data) {
-            const published = data.filter((item: any) => 
-              !item.scheduled_at || new Date(item.scheduled_at).getTime() <= Date.now()
-            );
-
-            setNewsList(
-              published.map((item: any) => ({
-                id: item.id,
-                title: item.title,
-                category: item.category || "Atualizações",
-                date: new Date(item.created_at).toLocaleDateString("pt-BR", {
-                  day: "2-digit",
-                  month: "long",
-                  year: "numeric",
-                }),
-                readTime: `${Math.max(2, Math.ceil(item.content.length / 800))} min de leitura`,
-                summary: item.summary,
-                isFeatured: item.is_featured || false,
-                tagColor: getCategoryStyles(item.category || "Atualizações"),
-                slug: item.slug,
-                type: item.type,
-                image_url: item.image_url,
-              }))
-            );
+            setNewsList(formatArticles(data));
           }
         } else {
           // Fallback Local Storage
@@ -112,7 +126,7 @@ export default function NewsSection() {
     };
 
     fetchNews();
-  }, []);
+  }, [initialArticles]);
 
   // Filtros e destaque
   const categories = ["Todos", "Atualizações", "Eventos", "Guias", "Manutenção"];
@@ -224,7 +238,7 @@ export default function NewsSection() {
                           <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${item.tagColor}`}>
                             {item.category}
                           </span>
-                          <span className="text-xs font-mono text-slate-400">{item.date}</span>
+                          <span className="text-xs font-mono text-slate-400" suppressHydrationWarning>{item.date}</span>
                           <span className="text-xs font-mono text-slate-500">• {item.readTime}</span>
                         </div>
 
@@ -260,6 +274,7 @@ export default function NewsSection() {
                         <button
                           key={dotIdx}
                           onClick={() => setCarouselIndex(dotIdx)}
+                          aria-label={`Ver matéria em destaque ${dotIdx + 1}`}
                           className={`w-2.5 h-2.5 rounded-full transition-all ${
                             carouselIndex === dotIdx ? "bg-[#00ff88] scale-110" : "bg-slate-700 hover:bg-slate-600"
                           }`}
@@ -270,6 +285,7 @@ export default function NewsSection() {
                     {/* Seta Esquerda */}
                     <button
                       onClick={() => setCarouselIndex((prev) => (prev - 1 + featuredItems.length) % featuredItems.length)}
+                      aria-label="Matéria anterior"
                       className="absolute left-4 top-1/2 transform -translate-y-1/2 w-9 h-9 rounded-full bg-slate-900/80 hover:bg-[#00ff88] hover:text-slate-950 border border-slate-800 flex items-center justify-center text-white text-sm transition-all opacity-0 group-hover:opacity-100 z-20"
                     >
                       ◀
@@ -278,6 +294,7 @@ export default function NewsSection() {
                     {/* Seta Direita */}
                     <button
                       onClick={() => setCarouselIndex((prev) => (prev + 1) % featuredItems.length)}
+                      aria-label="Próxima matéria"
                       className="absolute right-4 top-1/2 transform -translate-y-1/2 w-9 h-9 rounded-full bg-slate-900/80 hover:bg-[#00ff88] hover:text-slate-950 border border-slate-800 flex items-center justify-center text-white text-sm transition-all opacity-0 group-hover:opacity-100 z-20"
                     >
                       ▶
@@ -322,7 +339,7 @@ export default function NewsSection() {
                           <span className={`px-3 py-1 rounded-full text-[11px] font-semibold border ${news.tagColor}`}>
                             {news.category}
                           </span>
-                          <span className="text-[11px] font-mono text-slate-400">{news.date}</span>
+                          <span className="text-[11px] font-mono text-slate-400" suppressHydrationWarning>{news.date}</span>
                         </div>
 
                         <h3 className="text-lg font-bold text-white group-hover:text-[#00ff88] transition-colors leading-snug">

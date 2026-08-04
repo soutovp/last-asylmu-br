@@ -1,6 +1,9 @@
 import { Metadata } from "next";
 import Hero from "@/components/Hero";
 import NewsSection from "@/components/NewsSection";
+import { supabase, isSupabaseConfigured } from "@/lib/supabase";
+
+export const revalidate = 60; // Revalida a cada 60 segundos (ISR)
 
 export const metadata: Metadata = {
   title: "Last Asylum BR - Portal, Calculadoras e Guias de Last Asylum Plague",
@@ -41,14 +44,32 @@ export const metadata: Metadata = {
   }
 };
 
-export default function Home() {
+export default async function Home() {
+  let initialArticles = [];
+
+  if (isSupabaseConfigured) {
+    try {
+      const { data } = await supabase
+        .from("articles")
+        .select("*")
+        .eq("status", "public")
+        .order("created_at", { ascending: false });
+
+      if (data) {
+        initialArticles = data;
+      }
+    } catch (err) {
+      console.error("Erro ao buscar artigos no servidor:", err);
+    }
+  }
+
   return (
     <div className="min-h-screen flex flex-col bg-[#080c14] text-slate-100 selection:bg-[#00ff88] selection:text-slate-950">
       {/* BANNER PRINCIPAL COM BARRA DE NAVEGAÇÃO FLUTUANTE */}
       <Hero />
 
       {/* SEÇÃO DA CENTRAL DE NOTÍCIAS & ATUALIZAÇÕES BRASIL */}
-      <NewsSection />
+      <NewsSection initialArticles={initialArticles} />
     </div>
   );
 }

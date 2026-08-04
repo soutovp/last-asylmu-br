@@ -115,6 +115,7 @@ export default function Header() {
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               type="button"
+              aria-label="Menu principal"
               className="p-2 rounded-full text-slate-[#00ff88] bg-slate-900 border border-[#00ff88]/30 focus:outline-none"
             >
               <span className="sr-only">Abrir menu</span>
