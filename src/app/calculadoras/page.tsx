@@ -21,7 +21,7 @@ export const metadata = {
   openGraph: {
     title: "Calculadora de Heróis: Estrelas, Nível e Habilidades - Last Asylum BR",
     description: "Calcule os custos de Antitoxina, Estrelas e Medalhas de Habilidade de Heróis para Last Asylum Plague. Planeje sua evolução de forma otimizada.",
-    url: "https://lastasylum.com.br/calculadoras",
+    url: "https://lapbr.netlify.app/calculadoras",
     siteName: "Last Asylum BR",
     images: [
       {

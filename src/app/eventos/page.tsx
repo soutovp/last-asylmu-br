@@ -13,7 +13,7 @@ export default function EventosPage() {
       {/* BACKGROUND FIXO DA VILA PARA PÁGINAS INTERNAS (OPACIDADE 85%) */}
       <div className="fixed inset-0 z-0 pointer-events-none">
         <Image
-          src="/images/village_banner_2.png"
+          src="/images/village_banner_2.webp"
           alt="Background Fixo da Vila"
           fill
           priority

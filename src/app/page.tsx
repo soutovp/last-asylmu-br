@@ -23,7 +23,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Last Asylum BR - Portal, Calculadoras e Guias de Last Asylum Plague",
     description: "O hub brasileiro definitivo para Last Asylum Plague. Encontre calculadoras de recursos, calendário de eventos semanais, guias de sobrevivência e notícias oficiais.",
-    url: "https://lastasylum.com.br",
+    url: "https://lapbr.netlify.app",
     siteName: "Last Asylum BR",
     images: [
       {

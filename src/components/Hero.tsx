@@ -29,16 +29,16 @@ export default function Hero() {
 
         {/* TÍTULO NO BANNER COM LOGO 'LAST ASYLUM BR' (BR ELEVADO) */}
         <div className="relative z-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 sm:pt-16 text-center w-full">
-          <div className="flex justify-center mb-4">
+          <h1 className="flex justify-center mb-4">
             <Image 
               src="/images/last-asylum-br-logo.webp" 
-              alt="Last Asylum BR Logo" 
+              alt="Last Asylum BR - Portal de Calculadoras e Guias de Last Asylum Plague" 
               width={400}
               height={250}
               priority
               className="h-[150px] md:h-[250px] w-auto object-contain drop-shadow-[0_4px_25px_rgba(0,255,136,0.25)] animate-in zoom-in duration-300"
             />
-          </div>
+          </h1>
 
           <p className="mt-3 text-base sm:text-lg text-slate-300 font-medium max-w-2xl mx-auto drop-shadow-[0_2px_10px_rgba(0,0,0,0.9)]">
             O hub definitivo de calculadoras, eventos e guias estratégicos para a comunidade brasileira.
